@@ -157,7 +157,10 @@ find_package(Boost 1.58 REQUIRED COMPONENTS
         locale)
 
 if(UNIX AND NOT APPLE)
-    set(CMAKE_SKIP_RPATH ON)
+    if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(CMAKE_SKIP_RPATH ON)
+    endif()
+
     find_package(X11 REQUIRED)
     message(STATUS "X11_FOUND = ${X11_FOUND}")
     message(STATUS "X11_INCLUDE_DIR = ${X11_INCLUDE_DIR}")
