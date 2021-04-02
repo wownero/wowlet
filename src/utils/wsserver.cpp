@@ -201,7 +201,7 @@ void WSServer::processBinaryMessage(QByteArray buffer) {
             }
         }
 
-        FeatherSeed seed = FeatherSeed(m_ctx->restoreHeights[m_ctx->networkType], m_ctx->coinName, m_ctx->seedLanguage);
+        WowletSeed seed = WowletSeed(m_ctx->restoreHeights[m_ctx->networkType], m_ctx->coinName, m_ctx->seedLanguage);
         m_ctx->createWallet(seed, walletPath, password);
     } else if(cmd == "transactionHistory") {
         m_ctx->currentWallet->history()->refresh(m_ctx->currentWallet->currentSubaddressAccount());
