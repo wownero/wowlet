@@ -181,6 +181,35 @@
             </item>
            </layout>
           </widget>
+          <widget class="QWidget" name="tab_player">
+           <attribute name="title">
+            <string>WowPlayer</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_player">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="WowPlayerWidget" name="wowPlayerWidget" native="true">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>320</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
           <widget class="QWidget" name="tab">
            <attribute name="title">
             <string>WFS</string>
@@ -782,6 +811,12 @@
    <class>SuchWowWidget</class>
    <extends>QWidget</extends>
    <header>widgets/suchwowwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>WowPlayerWidget</class>
+   <extends>QWidget</extends>
+   <header>widgets/wowplayerwidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

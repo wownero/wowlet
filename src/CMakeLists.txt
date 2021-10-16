@@ -40,9 +40,9 @@ file(GLOB SOURCE_FILES
         )
 
 if(QML)
-    find_package(Qt5 REQUIRED COMPONENTS Core Widgets Gui Network Svg Xml WebSockets Quick Qml QuickControls2 QmlImportScanner Multimedia)
+    find_package(Qt5 REQUIRED COMPONENTS Core Widgets Gui Network Svg Xml WebSockets Quick Qml QuickControls2 QmlImportScanner Multimedia MultimediaWidgets)
 else()
-    find_package(Qt5 REQUIRED COMPONENTS Core Widgets Gui Network Svg Xml WebSockets Multimedia)
+    find_package(Qt5 REQUIRED COMPONENTS Core Widgets Gui Network Svg Xml WebSockets Multimedia MultimediaWidgets)
 endif()
 
 if(OPENVR)
@@ -148,6 +148,7 @@ target_include_directories(wowlet PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/utils
         ${CMAKE_CURRENT_SOURCE_DIR}/tor
         ${CMAKE_CURRENT_SOURCE_DIR}/qrcode
+        ${CMAKE_CURRENT_SOURCE_DIR}/widgets
         ${X11_INCLUDE_DIR}
         ${Boost_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}
@@ -158,6 +159,8 @@ target_include_directories(wowlet PUBLIC
         ${Qt5Svg_INCLUDE_DIRS}
         ${Qt5Xml_INCLUDE_DIRS}
         ${Qt5WebSockets_INCLUDE_DIRS}
+        ${Qt5Multimedia_INCLUDE_DIRS}
+        ${Qt5MultimediaWidgets_INCLUDE_DIRS}
         )
 
 if(OPENVR)
@@ -230,6 +233,8 @@ target_compile_definitions(wowlet
         ${Qt5Svg_DEFINITIONS}
         ${Qt5Xml_DEFINITIONS}
         ${Qt5WebSockets_DEFINITIONS}
+        ${Qt5Multimedia_DEFINITIONS}
+        ${Qt5MultimediaWidgets_DEFINITIONS}
         )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
@@ -273,7 +278,9 @@ if(QML)
             Qt5::WebSockets
             Qt5::Quick
             Qt5::Qml
-            Qt5::QuickControls2)
+            Qt5::QuickControls2
+            Qt5::Multimedia
+            Qt5::MultimediaWidgets)
 else()
     target_link_libraries(wowlet PUBLIC
             Qt5::Core
@@ -282,7 +289,9 @@ else()
             Qt5::Network
             Qt5::Svg
             Qt5::Xml
-            Qt5::WebSockets)
+            Qt5::WebSockets
+            Qt5::Multimedia
+            Qt5::MultimediaWidgets)
 endif()
 
 if(ANDROID)
