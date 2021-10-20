@@ -151,18 +151,18 @@ WowPlayerWidget::WowPlayerWidget(QWidget *parent) :
     QBoxLayout *infoPlanelLayout = new QVBoxLayout;
     m_statusBar = new QPlainTextEdit;
     m_statusLabel = new QLabel;
-    m_TextBrowser = new QTextBrowser;
-    m_statusBar->setPlainText("More fun with WowPlayer\nIRC!Radio\nIRC\n140.211.166.64:6667\n#wownero-music");
-    m_statusLabel->setText("Wow player ready");
+    //m_TextBrowser = new QTextBrowser;
+    m_statusBar->setPlainText("More fun with Wowmero IRC!Radio\nIRC 140.211.166.64:6667\n#wownero-music");
+    m_statusLabel->setText("WowPlayer ready");
     QUrl *history = new QUrl("https://radio.wownero.com/history.txt");
 
-    m_TextBrowser->setSource(QUrl("https://radio.wownero.com/history.txt"));
-    m_TextBrowser->reload();
-    m_TextBrowser->setPlainText(history->toString());
-    m_TextBrowser->append("<a href = \"https://radio.wownero.com/history.txt\"> History </a>");
+    //m_TextBrowser->setSource(QUrl("https://radio.wownero.com/history.txt"));
+    //m_TextBrowser->reload();
+    //m_TextBrowser->setPlainText(history->toString());
+    //m_TextBrowser->append("<a href = \"https://radio.wownero.com/history.txt\"> History </a>");
     infoPlanelLayout->addWidget(m_statusLabel);//, 2);
     infoPlanelLayout->addWidget(m_statusBar);//, 2);
-    infoPlanelLayout->addWidget(m_TextBrowser);
+    //infoPlanelLayout->addWidget(m_TextBrowser);
     //infoPlanelLayout->addWidget(playWowIRCRadioButton);
 
     QBoxLayout *playerButtonsLayout = new QHBoxLayout;
@@ -472,7 +472,7 @@ void WowPlayerWidget::setStatusInfo(const QString &info)
     //content+="test";
 //    radioHistoryFile->close();
     //m_TextBrowser->setSource(QUrl("https://radio.wownero.com/history.txt"));
-    m_TextBrowser->reload();
+    //m_TextBrowser->reload();
     m_statusBar->setPlainText("Wownero IRC!Radio"+m_trackInfo);
     m_statusLabel->setText(m_statusInfo);
 /*    if (m_statusBar) {
