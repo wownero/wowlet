@@ -144,14 +144,18 @@ WowPlayerWidget::WowPlayerWidget(QWidget *parent) :
     m_fullScreenButton = new QPushButton(tr("FullScreen"), this);
     m_fullScreenButton->setCheckable(true);
 
-    m_colorButton = new QPushButton(tr("Color Options..."), this);
-    m_colorButton->setEnabled(false);
-    connect(m_colorButton, &QPushButton::clicked, this, &WowPlayerWidget::showColorDialog);
+    //m_colorButton = new QPushButton(tr("Color Options..."), this);
+    //m_colorButton->setEnabled(false);
+    //connect(m_colorButton, &QPushButton::clicked, this, &WowPlayerWidget::showColorDialog);
 
-    QBoxLayout *infoPlanelLayout = new QVBoxLayout;
+    QBoxLayout *infoPanelLayout = new QVBoxLayout;
     m_statusBar = new QPlainTextEdit;
     m_statusLabel = new QLabel;
+    m_statusLabel->setMaximumHeight(30);
+
     //m_TextBrowser = new QTextBrowser;
+    m_statusBar->setMaximumHeight(66);
+    //m_statusBar->sizeHint();
     m_statusBar->setPlainText("More fun with Wowmero IRC!Radio\nIRC 140.211.166.64:6667\n#wownero-music");
     m_statusLabel->setText("WowPlayer ready");
     QUrl *history = new QUrl("https://radio.wownero.com/history.txt");
@@ -160,8 +164,8 @@ WowPlayerWidget::WowPlayerWidget(QWidget *parent) :
     //m_TextBrowser->reload();
     //m_TextBrowser->setPlainText(history->toString());
     //m_TextBrowser->append("<a href = \"https://radio.wownero.com/history.txt\"> History </a>");
-    infoPlanelLayout->addWidget(m_statusLabel);//, 2);
-    infoPlanelLayout->addWidget(m_statusBar);//, 2);
+    infoPanelLayout->addWidget(m_statusLabel);//, 2);
+    infoPanelLayout->addWidget(m_statusBar);//, 2);
     //infoPlanelLayout->addWidget(m_TextBrowser);
     //infoPlanelLayout->addWidget(playWowIRCRadioButton);
 
@@ -185,13 +189,15 @@ WowPlayerWidget::WowPlayerWidget(QWidget *parent) :
     //controlLayout->addWidget(m_colorButton);
 
     QBoxLayout *layout = new QVBoxLayout;
-    layout->addLayout(displayLayout);
+
     QHBoxLayout *hLayout = new QHBoxLayout;
     hLayout->addWidget(m_slider);
     hLayout->addWidget(m_labelDuration);
+
+    layout->addLayout(infoPanelLayout);
     layout->addLayout(hLayout);
     layout->addLayout(controlLayout);
-    layout->addLayout(infoPlanelLayout);
+    layout->addLayout(displayLayout);
     //layout->addLayout(histogramLayout);
 #if defined(Q_OS_QNX)
     // On QNX, the main window doesn't have a title bar (or any other decorations).
@@ -452,13 +458,14 @@ void WowPlayerWidget::setTrackInfo(const QString &info)
   //  m_statusLabel->setText(m_statusInfo);
 
     if (m_statusBar) {
-        m_statusBar->setPlainText("Wownero IRC!Radio"+m_trackInfo);
+        //if (!m_trackInfo.isEmpty()) m_statusBar->setPlainText("Wownero +++IRC!Radio"+m_trackInfo); else m_statusBar->setPlainText("");
+        m_statusBar->setPlainText(m_trackInfo);
         m_statusLabel->setText(m_statusInfo);
     } else {
         if (!m_statusInfo.isEmpty())
-            setWindowTitle(QString("%1 | %2").arg(m_trackInfo).arg(m_statusInfo));
+            m_statusBar->setPlainText(QString("%1 | %2").arg(m_trackInfo).arg(m_statusInfo));
         else
-            setWindowTitle(m_trackInfo);
+            m_statusBar->setPlainText(m_trackInfo);
     }
 }
 
@@ -473,7 +480,8 @@ void WowPlayerWidget::setStatusInfo(const QString &info)
 //    radioHistoryFile->close();
     //m_TextBrowser->setSource(QUrl("https://radio.wownero.com/history.txt"));
     //m_TextBrowser->reload();
-    m_statusBar->setPlainText("Wownero IRC!Radio"+m_trackInfo);
+    if (!m_trackInfo.isEmpty()) m_statusBar->setPlainText("Wownero IRC!Radio"+m_trackInfo); else m_statusBar->setPlainText("");
+//    m_statusBar->setPlainText("Wownero IRC!Radio"+m_trackInfo);
     m_statusLabel->setText(m_statusInfo);
 /*    if (m_statusBar) {
         m_statusBar->showMessage(m_trackInfo);
