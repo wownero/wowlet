@@ -2,14 +2,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-# pthread
 find_package(Threads REQUIRED)
-
-if(QML)
-    # PNG
-    find_package(ZLIB REQUIRED)
-    find_package(PNG REQUIRED)
-endif()
+find_package(ZLIB REQUIRED)
+find_package(PNG REQUIRED)
 
 # Compile these source files (.h/.cpp)
 file(GLOB SOURCE_FILES

@@ -32,6 +32,10 @@ ContactsWidget::ContactsWidget(QWidget *parent) :
         this->newContact();
     });
 
+    connect(ui->btn_addContact, &QPushButton::pressed, [this]{
+      this->newContact();
+    });
+
     connect(ui->contacts, &QTreeView::customContextMenuRequested, [=](const QPoint & point){
         QModelIndex index = ui->contacts->indexAt(point);
         if (index.isValid()) {
