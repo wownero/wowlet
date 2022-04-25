@@ -32,6 +32,12 @@ TransactionInfo* TransactionHistory::transaction(const QString &id)
     return itr != m_tinfo.end() ? *itr : nullptr;
 }
 
+void TransactionHistory::calcFiatInfo() {
+    for(const auto &tx: m_tinfo) {
+        tx->calcFiatInfo();
+    }
+}
+
 void TransactionHistory::refresh(quint32 accountIndex)
 {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)

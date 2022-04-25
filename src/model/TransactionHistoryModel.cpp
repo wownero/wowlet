@@ -53,10 +53,10 @@ int TransactionHistoryModel::columnCount(const QModelIndex &parent) const {
 
     // When wowlet is in QtWidgets mode, it will only use the first 5 columns,
     // the rest should be hidden, because it shows in the GUI. So by default we'll
-    // use 5 as column count. When in QtQuick (QML) mode, we want to expose more columns
+    // use 6 as column count. When in QtQuick (QML) mode, we want to expose more columns
     // so we can change the column count here.
 
-    return AppContext::isQML ? this->COUNT : 5;
+    return AppContext::isQML ? this->COUNT : 7;
 }
 
 QVariant TransactionHistoryModel::data(const QModelIndex &index, int role) const {
@@ -76,7 +76,9 @@ QVariant TransactionHistoryModel::data(const QModelIndex &index, int role) const
         else if (role == Qt::TextAlignmentRole) {
             switch (index.column()) {
                 case TransactionInfoRole::Amount:
-                case TransactionInfoRole::FiatAmount:
+                case TransactionInfoRole::HistoricalPrice:
+                case TransactionInfoRole::HistoricalRate:
+                case TransactionInfoRole::CurrentPrice:
                     result = Qt::AlignRight;
             }
         }
@@ -118,7 +120,6 @@ QVariant TransactionHistoryModel::data(const QModelIndex &index, int role) const
         }
         else if (role == Qt::ForegroundRole) {
             switch(index.column()) {
-                case TransactionInfoRole::FiatAmount:
                 case TransactionInfoRole::Amount:
                 {
                     if (tInfo.direction() == TransactionInfo::Direction_Out) {
@@ -170,18 +171,16 @@ QVariant TransactionHistoryModel::parseTransactionInfo(const TransactionInfo &tI
         }
         case TransactionInfoRole::TxID:
             return tInfo.hash();
-        case TransactionInfoRole::FiatAmount:
+        case TransactionInfoRole::HistoricalRate: {
+            return tInfo.historicalRateStr();
+        }
+        case TransactionInfoRole::HistoricalPrice:
         {
-            double usd_price = AppContext::txFiatHistory->get(tInfo.timestamp().toString("yyyyMMdd"));
-            if (usd_price == 0.0)
-                return QVariant("?");
-
-            double usd_amount = usd_price * (tInfo.balanceDelta() / globals::cdiv);
-            if(this->preferredFiatSymbol != "USD")
-                usd_amount = AppContext::prices->convert("USD", this->preferredFiatSymbol, usd_amount);
-            double fiat_rounded = ceil(Utils::roundSignificant(usd_amount, 3) * 100.0) / 100.0;
-
-            return QString("%1").arg(Utils::amountToCurrencyString(fiat_rounded, this->preferredFiatSymbol));
+            return tInfo.historicalPriceStr();
+        }
+        case TransactionInfoRole::CurrentPrice:
+        {
+            return tInfo.currentPriceStr();
         }
         default:
         {
@@ -206,8 +205,12 @@ QVariant TransactionHistoryModel::headerData(int section, Qt::Orientation orient
                 return QString("Amount");
             case TransactionInfoRole::TxID:
                 return QString("Txid");
-            case TransactionInfoRole::FiatAmount:
-                return QString("Fiat");
+            case TransactionInfoRole::HistoricalPrice:
+                return QString("Historical price");
+            case TransactionInfoRole::HistoricalRate:
+                return QString("Historical rate");
+            case TransactionInfoRole::CurrentPrice:
+                return QString("Current price");
             default:
                 return QVariant();
         }

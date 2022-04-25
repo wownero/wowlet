@@ -334,6 +334,7 @@ void AppContext::onPreferredFiatCurrencyChanged(const QString &symbol) {
         auto *model = this->currentWallet->transactionHistoryModel();
         if(model != nullptr) {
             model->preferredFiatSymbol = symbol;
+            this->currentWallet->transactionHistoryModel()->transactionHistory()->calcFiatInfo();
         }
     }
 }
@@ -378,6 +379,13 @@ void AppContext::onWalletOpened(Wallet *wallet) {
     connect(this->currentWallet, &Wallet::transactionCommitted, this, &AppContext::onTransactionCommitted);
     connect(this->currentWallet, &Wallet::heightRefreshed, this, &AppContext::onHeightRefreshed);
     connect(this->currentWallet, &Wallet::transactionCreated, this, &AppContext::onTransactionCreated);
+
+    this->currentWallet->historyModel();  // load historyModel
+    auto *txHistory = this->currentWallet->history();
+    txHistory->refresh(this->currentWallet->currentSubaddressAccount());
+
+    connect(AppContext::prices, &Prices::fiatPricesUpdated, txHistory, &TransactionHistory::calcFiatInfo);
+    connect(AppContext::prices, &Prices::cryptoPricesUpdated, txHistory, &TransactionHistory::calcFiatInfo);
 
     emit walletOpened(wallet);
 

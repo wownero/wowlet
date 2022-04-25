@@ -75,7 +75,7 @@ public:
     static double roundSignificant(double N, double n);
     static QString formatBytes(quint64 bytes);
     static QLocale getCurrencyLocale(const QString &currencyCode);
-    static QString amountToCurrencyString(double amount, const QString &currencyCode);
+    static QString amountToCurrencyString(double amount, const QString &currencyCode, int precision = 2);
     static int maxLength(const QVector<QString> &array);
     static double roundUp(double value, int decimal_places);
     static QMap<QString, QLocale> localeCache;
