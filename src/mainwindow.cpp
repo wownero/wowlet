@@ -282,6 +282,9 @@ MainWindow::MainWindow(AppContext *ctx, QWidget *parent) :
 
     // settings connects
     connect(m_windowSettings, &Settings::preferredFiatCurrencyChanged, this, &MainWindow::onUpdateFiatBalanceWidget);
+    connect(m_windowSettings, &Settings::preferredFiatCurrencyChanged, this, &MainWindow::onUpdateWowWidget);
+    connect(m_windowSettings, &Settings::preferredFiatCurrencyChanged, this, &MainWindow::onUpdateBTCWidget);
+    connect(m_windowSettings, &Settings::preferredFiatCurrencyChanged, this, &MainWindow::onUpdateXMRWidget);
     connect(m_windowSettings, &Settings::preferredFiatCurrencyChanged, m_ctx, &AppContext::onPreferredFiatCurrencyChanged);
     connect(m_windowSettings, &Settings::preferredFiatCurrencyChanged, ui->suchWowWidget, &SuchWowWidget::onPreferredFiatCurrencyChanged);
     connect(m_windowSettings, &Settings::preferredFiatCurrencyChanged, ui->sendWidget, QOverload<>::of(&SendWidget::onPreferredFiatCurrencyChanged));
@@ -1411,7 +1414,12 @@ void MainWindow::onUpdateWowWidget() {
     }
 
     auto wowObj = AppContext::prices->markets["WOW"];
-    auto currencyText = Utils::amountToCurrencyString(wowObj.price_usd, fiatCurrency);
+
+    double amount = wowObj.price_usd;
+    if(fiatCurrency != "USD")
+      amount = AppContext::prices->convert("USD", fiatCurrency, amount);
+
+    auto currencyText = Utils::amountToCurrencyString(amount, fiatCurrency, 5);
     m_tickerWOW->setFiatText(currencyText);
 
     auto pct24h = AppContext::prices->markets["WOW"].price_usd_change_pct_24h;

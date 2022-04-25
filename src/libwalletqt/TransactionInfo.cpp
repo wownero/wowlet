@@ -5,6 +5,8 @@
 #include "libwalletqt/WalletManager.h"
 #include "Transfer.h"
 #include "Ring.h"
+#include "globals.h"
+#include "appcontext.h"
 
 TransactionInfo::Direction TransactionInfo::direction() const
 {
@@ -109,6 +111,21 @@ QDateTime TransactionInfo::timestamp() const
     return m_timestamp;
 }
 
+QString TransactionInfo::currentPriceStr() const
+{
+    return m_currentPriceStr;
+}
+
+QString TransactionInfo::historicalRateStr() const
+{
+    return m_historicalRateStr;
+}
+
+QString TransactionInfo::historicalPriceStr() const
+{
+    return m_historicalPriceStr;
+}
+
 QString TransactionInfo::date() const
 {
     return timestamp().date().toString(Qt::ISODate);
@@ -161,6 +178,37 @@ QString TransactionInfo::rings_formatted() const
     return rings;
 }
 
+void TransactionInfo::calcFiatInfo() {
+    auto const hash = this->hash();
+    auto timestamp = this->timestamp().toString("yyyyMMdd");
+
+    if(!AppContext::prices->markets.contains("WOW"))
+        return;
+
+    double fiat_rate = AppContext::prices->markets["WOW"].price_usd;
+    double historical_fiat_rate = AppContext::txFiatHistory->get(timestamp);
+    if (historical_fiat_rate == 0.0)
+        return;
+
+    auto const preferredFiat = config()->get(Config::preferredFiatCurrency).toString();
+
+    if(preferredFiat != "USD") {
+        historical_fiat_rate = AppContext::prices->convert(
+            "USD", preferredFiat, historical_fiat_rate);
+        fiat_rate = AppContext::prices->convert(
+            "USD", preferredFiat, fiat_rate);
+    }
+
+    double balance = (this->balanceDelta() / globals::cdiv);
+
+    m_historicalRate = historical_fiat_rate;
+    m_historicalPrice = historical_fiat_rate * balance;
+    m_currentPrice = fiat_rate * balance;
+    m_historicalPriceStr = Utils::amountToCurrencyString(m_historicalPrice, preferredFiat, 2);
+    m_historicalRateStr = Utils::amountToCurrencyString(m_historicalRate, preferredFiat, 5);
+    m_currentPriceStr = Utils::amountToCurrencyString(m_currentPrice, preferredFiat, 2);
+}
+
 TransactionInfo::TransactionInfo(const Monero::TransactionInfo *pimpl, QObject *parent)
     : QObject(parent)
     , m_amount(pimpl->amount())
@@ -193,4 +241,6 @@ TransactionInfo::TransactionInfo(const Monero::TransactionInfo *pimpl, QObject *
     {
         m_subaddrIndex.insert(i);
     }
+
+    this->calcFiatInfo();
 }

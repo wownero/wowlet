@@ -71,6 +71,9 @@ public:
     QDateTime timestamp() const;
     QString date() const;
     QString time() const;
+    QString currentPriceStr() const;
+    QString historicalRateStr() const;
+    QString historicalPriceStr() const;
     QString paymentId() const;
     //! only applicable for output transactions
     //! used in tx details popup
@@ -78,6 +81,9 @@ public:
     QString destinations_formatted() const;
     QList<Transfer*> transfers() const;
     QString rings_formatted() const;
+
+public slots:
+  void calcFiatInfo();
 
 private:
     explicit TransactionInfo(const Monero::TransactionInfo *pimpl, QObject *parent = nullptr);
@@ -102,6 +108,14 @@ private:
     QDateTime m_timestamp;
     quint64 m_unlockTime;
     bool m_coinbase;
+
+    double m_historicalPrice = 0.0;
+    double m_historicalRate = 0.0;
+    double m_currentPrice = 0.0;
+
+    QString m_currentPriceStr = "?";
+    QString m_historicalRateStr = "?";
+    QString m_historicalPriceStr = "?";
 };
 
 #endif // TRANSACTIONINFO_H

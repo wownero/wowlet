@@ -418,14 +418,14 @@ double Utils::roundUp(double value, int decimal_places) {
     return std::ceil(value * multiplier) / multiplier;
 }
 
-QString Utils::amountToCurrencyString(double amount, const QString &currencyCode) {
+QString Utils::amountToCurrencyString(double amount, const QString &currencyCode, int precision) {
     QLocale locale = getCurrencyLocale(currencyCode);
 
     // \xC2\xA0 = UTF-8 non-breaking space, it looks off.
     if (currencyCode == "USD")
-        return locale.toCurrencyString(amount, "$").remove("\xC2\xA0");
+        return locale.toCurrencyString(amount, "$", precision).remove("\xC2\xA0");
 
-    return locale.toCurrencyString(amount).remove("\xC2\xA0");
+    return locale.toCurrencyString(amount, nullptr, precision).remove("\xC2\xA0");
 }
 
 int Utils::maxLength(const QVector<QString> &array) {

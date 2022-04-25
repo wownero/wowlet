@@ -39,6 +39,9 @@ public:
     quint64 minutesToUnlock() const;
     bool locked() const;
 
+public slots:
+    void calcFiatInfo();
+
 signals:
     void refreshStarted() const;
     void refreshFinished() const;
