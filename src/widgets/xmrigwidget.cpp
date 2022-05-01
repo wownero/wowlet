@@ -362,12 +362,12 @@ void XMRigWidget::showContextWownerodMenu(const QPoint &pos) {
     QModelIndex index = ui->tableWownerod->indexAt(pos);
     if (!index.isValid())
         return;
-    m_contextMenuRig->exec(ui->tableWownerod->viewport()->mapToGlobal(pos));
+    m_contextMenuWownerod->exec(ui->tableWownerod->viewport()->mapToGlobal(pos));
 }
 
 void XMRigWidget::wownerodLinkClicked() {
-    QModelIndex index = ui->tableRig->currentIndex();
-    auto download_link = m_urlsRig.at(index.row());
+    QModelIndex index = ui->tableWownerod->currentIndex();
+    auto download_link = m_urlsWownerod.at(index.row());
     Utils::externalLinkWarning(this, download_link);
 }
 

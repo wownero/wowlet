@@ -439,6 +439,18 @@ int Utils::maxLength(const QVector<QString> &array) {
     return maxLength;
 }
 
+unsigned int Utils::countAlphaNum(const QByteArray &line) {
+    QRegularExpression re("([a-zA-Z0-9])");
+    QRegularExpressionMatchIterator iterator = re.globalMatch(line);
+
+    int count = 0;
+    while (iterator.hasNext()){
+        QRegularExpressionMatch match = iterator.next();
+        count += 1;
+    }
+    return count;
+}
+
 bool Utils::versionOutdated(const QString &current_version, const QString &newest_version) {
     // True when major or minor version changed
     auto cver = current_version.split('.');

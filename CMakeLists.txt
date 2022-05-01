@@ -5,9 +5,9 @@ message(STATUS "Initiating compile using CMake ${CMAKE_VERSION}")
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(VERSION_MAJOR "3")
-set(VERSION_MINOR "0")
+set(VERSION_MINOR "1")
 set(VERSION_REVISION "0")
-set(VERSION "beta-4")
+set(VERSION "beta-5")
 
 option(FETCH_DEPS "Download dependencies if they are not found" ON)
 option(OPENVR "Include OpenVR support")
@@ -16,7 +16,6 @@ option(ANDROID_DEBUG "View the Android app on desktop")
 option(TOR_BIN "Path to Tor binary to embed inside WOWlet")
 option(STATIC "Link libraries statically, requires static Qt")
 option(USE_DEVICE_TREZOR "Trezor support compilation")
-option(DONATE_BEG "Prompt donation window every once in a while" ON)
 list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_SOURCE_DIR}/cmake")
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
@@ -26,7 +25,7 @@ include(FindCcache)
 include(CheckIncludeFile)
 include(CheckSymbolExists)
 
-set(WOWNERO_HEAD "f611d5c9e32bc62f1735f6571b0bdb95cc020531")
+set(WOWNERO_HEAD "ff5182f7f2825263e93e88064931597b3c6cf928")
 set(BUILD_GUI_DEPS ON)
 set(BUILD_64 ON CACHE BOOL "Build 64-bit binaries")
 set(INSTALL_VENDORED_LIBUNBOUND ${STATIC})
@@ -85,16 +84,6 @@ function (add_linker_flag_if_supported flag var)
 endfunction()
 
 find_package(Git)
-#if(GIT_FOUND)
-#    message(STATUS "Initializing submodules")
-#    execute_process(COMMAND git "submodule" "update" "--init" "--recursive")
-#    execute_process(COMMAND git rev-parse "HEAD" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/wownero OUTPUT_VARIABLE _WOWNERO_HEAD OUTPUT_STRIP_TRAILING_WHITESPACE)
-#    if(NOT _WOWNERO_HEAD STREQUAL WOWNERO_HEAD)
-#        message(FATAL_ERROR "[submodule] Wownero HEAD was at ${_WOWNERO_HEAD} but should be at ${WOWNERO_HEAD}")
-#    else()
-#        message(STATUS "[submodule] Wownero HEAD @ ${WOWNERO_HEAD}")
-#    endif()
-#endif()
 
 add_subdirectory(wownero)
 get_directory_property(ARCH_WIDTH DIRECTORY "wownero" DEFINITION ARCH_WIDTH)
@@ -153,10 +142,12 @@ endif()
 if(MINGW)
     set(Boost_THREADAPI win32)
 endif()
+
 find_package(Boost 1.58 REQUIRED COMPONENTS
         system
         filesystem
         thread
+        atomic
         date_time
         chrono
         regex
@@ -197,33 +188,56 @@ if(UNIX)
     endif()
 endif()
 
-# To build WOWlet with embedded (and static) Tor, pass CMake -DTOR_BIN=/path/to/tor
 if(TOR_BIN)
+    # To build WOWlet with embedded & static Tor, pass CMake -DTOR_BIN=/path/to/tor_executable
+    # The CMake below will copy the Tor binary into src/assets/exec
+    #
+    # For release:
+    # ## Linux / Window
+    # on the buildbot(s) Tor is baked into the image
+    # - linux: See `Dockerfile`
+    # - windows: See `Dockerfile.windows`
+    #
+    # ## MacOS:
+    # we assume the following files are already present in src/assets/exec:
+    # - tor
+    # - libevent-2.1.7.dylib
+    # so copy them beforehand and set TOR_BIN to something random.
+
+    # MacOS, check if required files are present
     if(APPLE)
-        execute_process(COMMAND bash -c "touch ${CMAKE_CURRENT_SOURCE_DIR}/src/tor/libevent-2.1.7.dylib")
+        foreach(fn libevent-2.1.7.dylib tor)
+            set(tor_path "${CMAKE_CURRENT_SOURCE_DIR}/src/assets/exec/${fn}")
+            if (EXISTS "${tor_path}")
+                message(STATUS "Tor found: ${tor_path}")
+            else()
+                message(FATAL_ERROR "TOR_BIN is set, so the following file needs to be present: '${fn}'")
+            endif()
+            set(TOR_BIN "${tor_path}")
+        endforeach()
+    else()
+        if(not EXISTS "${TOR_BIN}")
+            message(FATAL_ERROR "TOR_BIN is set, but file does not exist: '${TOR_BIN}'")
+        endif()
+
+        # copy the Tor executable over
+        set(TOR_COPY_CMD "cp -u ${TOR_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/exec/tor")
+        message(STATUS "Tor cmd: ${TOR_COPY_CMD}")
+
+        execute_process(COMMAND bash -c "${TOR_COPY_CMD}" RESULT_VARIABLE ret)
+        if(ret EQUAL "1")
+            message(FATAL_ERROR "Tor copy failure: ${TOR_COPY_CMD}")
+        endif()
+
     endif()
 
-    execute_process(COMMAND bash -c "${TOR_BIN} --version --quiet" OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE out RESULT_VARIABLE ret)
+    # get Tor version while we're at it
+    execute_process(COMMAND bash -c "${TOR_BIN} --version --quiet | head -n1" OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE out RESULT_VARIABLE ret)
     if (ret EQUAL "0")
         set(TOR_VERSION "${out}")
     endif()
-    message(STATUS "${TOR_VERSION}")
+    message(STATUS "Tor version: ${TOR_VERSION}")
     configure_file("cmake/config-wowlet.h.cmake" "${CMAKE_CURRENT_SOURCE_DIR}/src/config-wowlet.h")
-
-    # on the buildbot Tor is baked into the image
-    # - linux: See `Dockerfile`
-    # - windows: See `Dockerfile.windows`
-    # - macos: taken from Tor Browser official release
-    if(REPRODUCIBLE) # Always copy Tor when doing a reproducible build to prevent old versions from getting included
-        set(TOR_COPY_CMD "cp ${TOR_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/exec/tor")
-    else()
-        set(TOR_COPY_CMD "cp -u ${TOR_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/exec/tor")
-    endif()
-    message(STATUS "${TOR_COPY_CMD}")
-    execute_process(COMMAND bash -c "${TOR_COPY_CMD}" RESULT_VARIABLE ret)
-    if(ret EQUAL "1")
-        message(FATAL_ERROR "Tor copy failure: ${TOR_COPY_CMD}")
-    endif()
 
     message(STATUS "Embedding Tor binary at ${TOR_BIN}")
 else()
@@ -278,16 +292,7 @@ if(APPLE)
     if(POLICY CMP0042)
         cmake_policy(SET CMP0042 NEW)
     endif()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=x86-64 -fvisibility=default -std=c++11")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=default -DGTEST_HAS_TR1_TUPLE=0")
-endif()
-
-if (APPLE AND NOT IOS)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=x86-64 -fvisibility=default -std=c++11")
-endif()
-
-if(APPLE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=default -DGTEST_HAS_TR1_TUPLE=0")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=default -std=c++11 -DGTEST_HAS_TR1_TUPLE=0")
 endif()
 
 # warnings

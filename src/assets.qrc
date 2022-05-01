@@ -232,6 +232,9 @@
     <file alias="mining/bottom_center_console.png">assets/images/mining/bottom_center_console.png</file>
     <file alias="mining/intel.png">assets/images/mining/intel.png</file>
     <file alias="mining/amd.png">assets/images/mining/amd.png</file>
+    <file alias="mining/overlay.png">assets/images/mining/overlay.png</file>
+    <file alias="mining/mining_gradient.png">assets/images/mining/mining_gradient.png</file>
+    <file alias="mining/bg1.gif">assets/images/mining/bg1.gif</file>
     <file alias="mining/lowerleft_circle.png">assets/images/mining/lowerleft_circle.png</file>
     <file alias="mining/lowerleft.png">assets/images/mining/lowerleft.png</file>
     <file alias="mining/lower_repeat.png">assets/images/mining/lower_repeat.png</file>

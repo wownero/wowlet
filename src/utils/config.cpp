@@ -23,7 +23,6 @@ static const QHash<Config::ConfigKey, ConfigDirective> configStrings = {
         {Config::warnOnTestnet,{QS("warnOnTestnet"), true}},
         {Config::warnOnAlpha,{QS("warnOnAlpha"), true}},
         {Config::homeWidget,{QS("homeWidget"), 0}},
-        {Config::donateBeg,{QS("donateBeg"), 1}},
         {Config::skin,{QS("skin"), "light"}},
         {Config::openVRSkin,{QS("openVRSkin"), "default"}},
         {Config::openVRStreamerMode,{QS("openVRStreamerMode"), false}},

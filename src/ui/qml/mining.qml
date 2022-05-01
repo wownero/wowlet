@@ -34,6 +34,55 @@ Rectangle {
         FontLoader { id: comicMonoBold; source: "qrc:/fonts/ComicMono-Bold.ttf" }
     }
 
+    AnimatedImage {
+        //visible: mining.daemonMiningState === 0
+        source: "qrc:/mining/bg1.gif"
+        fillMode: Image.PreserveAspectCrop
+
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.top: parent.top
+        anchors.bottomMargin: 92
+        anchors.topMargin: 112
+    }
+
+    Image {
+        source: "qrc:/mining/overlay.png"
+        fillMode: Image.PreserveAspectCrop
+
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.top: parent.top
+        anchors.bottomMargin: 92
+        anchors.topMargin: 112
+        smooth: false
+    }
+
+    Image {
+        id: miningGradient
+        opacity: 0.0
+        source: "qrc:/mining/mining_gradient.png"
+        fillMode: Image.PreserveAspectCrop
+
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.top: parent.top
+        anchors.bottomMargin: 92
+        anchors.topMargin: 112
+        smooth: false
+
+        states: [
+            State { when: mining.daemonMiningState !== 0;
+                    PropertyChanges {   target: miningGradient; opacity: 1.0    }},
+            State { when: mining.daemonMiningState === 0;
+                    PropertyChanges {   target: miningGradient; opacity: 0.0    }}
+        ]
+        transitions: [ Transition { NumberAnimation { property: "opacity"; duration: 750}} ]
+    }
+
     ColumnLayout {
         width: parent.width
         height: parent.height
@@ -343,8 +392,14 @@ Rectangle {
                         id: cons
                         anchors.margins: 4
                         anchors.fill: parent
-                        text: "Miner is idle."
-                        font.pointSize: 12
+                        text: {
+                            if(mining.daemonMiningState === 0) {
+                                return "Press the pick-axe to start mining!";
+                            } else {
+                                return "";
+                            }
+                        }
+                        font.pointSize: 14
                         font.family: comicMono.name;
                         wrapMode: Text.WordWrap
                         color: "white"
@@ -436,10 +491,7 @@ Rectangle {
                 }
 
                 Image {
-                    source: {
-                        var imgs = ["qrc:/mining/amd.png", "qrc:/mining/intel.png"];
-                        return imgs[Math.floor(Math.random()*imgs.length)];
-                    }
+                    source: "qrc:/mining/intel.png"
                     width: 100
                     height: 100
                     fillMode: Image.Pad
@@ -447,7 +499,6 @@ Rectangle {
 
                     anchors.bottom: parent.bottom
                     anchors.horizontalCenter: parent.horizontalCenter
-
                 }
             }
 

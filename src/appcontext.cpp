@@ -395,10 +395,6 @@ void AppContext::onWalletOpened(Wallet *wallet) {
     this->nodes->connectToNode();
     this->updateBalance();
 
-#ifdef DONATE_BEG
-    this->donateBeg();
-#endif
-
     // force trigger preferredFiat signal for history model
     this->onPreferredFiatCurrencyChanged(config()->get(Config::preferredFiatCurrency).toString());
     this->setWindowTitle();
@@ -786,21 +782,6 @@ void AppContext::onOpenAliasResolve(const QString &openAlias) {
     emit openAliasResolveError(msg);
 }
 
-void AppContext::donateBeg() {
-    if(this->currentWallet == nullptr) return;
-    if(this->networkType != NetworkType::Type::MAINNET) return;
-    if(this->currentWallet->viewOnly()) return;
-
-    auto donationCounter = config()->get(Config::donateBeg).toInt();
-    if(donationCounter == -1)
-        return;  // previously donated
-
-    donationCounter += 1;
-    if (donationCounter % m_donationBoundary == 0)
-        emit donationNag();
-    config()->set(Config::donateBeg, donationCounter);
-}
-
 AppContext::~AppContext() {}
 
 // ############################################## LIBWALLET QT #########################################################
@@ -875,12 +856,6 @@ void AppContext::onHeightRefreshed(quint64 walletHeight, quint64 daemonHeight, q
 }
 
 void AppContext::onTransactionCreated(PendingTransaction *tx, const QVector<QString> &address) {
-    for (auto &addr : address) {
-        if (addr == this->donationAddress) {
-            this->donationSending = true;
-        }
-    }
-
     // Let UI know that the transaction was constructed
     emit endTransaction();
 
@@ -970,12 +945,6 @@ void AppContext::onTransactionCommitted(bool status, PendingTransaction *tx, con
     this->updateBalance();
 
     emit transactionCommitted(status, tx, txid);
-
-    // this tx was a donation to WOWlet, stop our nagging
-    if(this->donationSending) {
-        this->donationSending = false;
-        config()->set(Config::donateBeg, -1);
-    }
 }
 
 void AppContext::storeWallet() {
