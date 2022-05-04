@@ -51,7 +51,6 @@ public:
     // Donation config
     const QString donationAddress = "Wo3MWeKwtA918DU4c69hVSNgejdWFCRCuWjShRY66mJkU2Hv58eygJWDJS1MNa2Ge5M1WjUkGHuLqHkweDxwZZU42d16v94mP";
     const int donationAmount = 25;  // euro
-    bool donationSending = false;
 
     QCommandLineParser *cmdargs;
 
@@ -129,7 +128,6 @@ public:
     Q_INVOKABLE void initTor();
     Q_INVOKABLE void initWS();
     void initRestoreHeights();
-    void donateBeg();
     void refreshModels();
     void setWindowTitle(bool mining = false);
 

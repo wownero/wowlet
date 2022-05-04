@@ -22,6 +22,8 @@ by running this command: `pandoc wowlet.1.md -s -t man -o wowlet.1 && gzip wowle
 
 ## Requirements
 
+(Possibly out-of-date)
+
 ### Ubuntu/Debian
 
 ```bash
@@ -40,29 +42,20 @@ protobuf libgcrypt qrencode ccache cmake pkgconfig git
 
 ## CMake
 
-After installing Qt you might have a folder called `/home/$user/Qt/`. You need to pass this to CMake 
+After installing Qt you might have a folder called `/home/$USER/Qt/`. You need to pass this to CMake 
 via the `CMAKE_PREFIX_PATH` definition.
 
 ```
--DCMAKE_PREFIX_PATH=/home/$user/QtNew/5.15.0/gcc_64
+-DCMAKE_PREFIX_PATH=/home/$USER/QtFooBar/5.15.0/gcc_64
 ```
 
-There are some Wownero/WOWlet related options/definitions that you may pass:
+There are some Wownero/WOWlet related options/definitions that you may pass, see also `CMakeLists.txt`.
 
-- `-DXMRIG=OFF` - disable XMRig feature
-- `-DTOR_BIN=/path/to/tor` - Embed a Tor executable inside WOWlet
-- `-DDONATE_BEG=OFF` - disable the dreaded donate requests
+At a bare minimum, recommended:
 
-And:
+`-DMANUAL_SUBMODULES=1 -DUSE_DEVICE_TREZOR=OFF -DUSE_SINGLE_BUILDDIR=ON -DDEV_MODE=ON`
 
-```
--DMANUAL_SUBMODULES=1  
--DUSE_DEVICE_TREZOR=OFF 
--DUSE_SINGLE_BUILDDIR=ON 
--DDEV_MODE=ON 
-```
-
-If you have OpenSSL installed in a custom location, try:
+If you have OpenSSL installed at a custom location, try:
 
 ```
 -DOPENSSL_INCLUDE_DIR=/usr/local/lib/openssl-1.1.1g/include 
@@ -85,7 +78,7 @@ Enable debugging symbols:
 ## Wowlet
 
 It's best to install Tor locally as a service and start `wowlet` with `--use-local-tor`, this 
-prevents the child process from starting up and saves time.
+prevents the child process from starting up each time you launch WOWlet and thus saves time.
 
 #### Ubuntu/Debian
 

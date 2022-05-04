@@ -50,7 +50,7 @@ bool XmRig::start(const QString &path, int threads) {
     }
 
     if(path.isEmpty()) {
-        emit error("wownerod path seems to be empty.");
+        emit error("wownerod path seems to be empty. Go to the mining settings tab and point towards the wownerod executable!");
         return false;
     }
 
@@ -113,6 +113,10 @@ void XmRig::onHandleProcessOutput() {
 
         auto lower = line.toLower();
         if(lower.isEmpty() || lower.startsWith("status")) continue;
+
+        // skip ascii/ansi art
+        unsigned int printable_chars_pct = 100 * Utils::countAlphaNum(lower) / lower.length();
+        if(printable_chars_pct < 60) continue;
 
         if(lower.startsWith("the daemon will start synchronizing")) {
             changeDaemonState(DaemonMiningState::startup);

@@ -30,8 +30,6 @@ CMAKEFLAGS = \
 	-DBUILD_64=On \
 	-DBUILD_TESTS=Off \
 	-DOPENVR=Off \
-	-DQML=Off \
-	-DXMRIG=Off \
 	-DTOR_BIN=Off \
 	-DCMAKE_CXX_STANDARD=11 \
 	-DCMAKE_VERBOSE_MAKEFILE=On \
@@ -75,10 +73,27 @@ windows-mxe-debug:
 	cmake -Bbuild $(CMAKEFLAGS)
 	$(MAKE) -Cbuild
 
+mac: CMAKEFLAGS += -DSTATIC=Off
+mac: CMAKEFLAGS += -DTOR_BIN=$(or ${TOR_BIN},OFF)
+mac: CMAKEFLAGS += -DBUILD_TAG="mac-x64"
+mac: CMAKEFLAGS += -DCMAKE_BUILD_TYPE=Release
+mac:
+	cmake -Bbuild $(CMAKEFLAGS)
+	$(MAKE) -Cbuild
+	$(MAKE) -Cbuild deploy
+
+# used for release, covers both intel and M1
+# 1) assumes a *static* BOOST has been compiled at BOOST_ROOT, see docs/BUILDING.md
+# 2) assumes a *static* Tor and libevent at src/assets/exec, see docs/BUILDING.md
+mac-release: CMAKEFLAGS += -DARCH=default
+mac-release: CMAKEFLAGS += -DCMAKE_OSX_ARCHITECTURES="x86_64"
 mac-release: CMAKEFLAGS += -DSTATIC=Off
-mac-release: CMAKEFLAGS += -DTOR_BIN=$(or ${TOR_BIN},OFF)
+mac-release: CMAKEFLAGS += -DTOR_BIN="foo"
 mac-release: CMAKEFLAGS += -DBUILD_TAG="mac-x64"
 mac-release: CMAKEFLAGS += -DCMAKE_BUILD_TYPE=Release
+mac-release: CMAKEFLAGS += -DBoost_USE_STATIC_RUNTIME=ON
+mac-release: CMAKEFLAGS += -DBoost_USE_STATIC_LIBS=ON
+mac-release: CMAKEFLAGS += -DBOOST_ROOT=/Users/${USER}/build/boost
 mac-release:
 	cmake -Bbuild $(CMAKEFLAGS)
 	$(MAKE) -Cbuild

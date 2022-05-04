@@ -62,7 +62,6 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-deprecated-declarations
 add_subdirectory(libwalletqt)
 add_subdirectory(model)
 add_subdirectory(utils)
-add_subdirectory(openpgp)
 
 if(WITH_SCANNER)
     add_subdirectory(QR-Code-scanner)
@@ -140,6 +139,7 @@ target_include_directories(wowlet PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/tor
         ${CMAKE_CURRENT_SOURCE_DIR}/qrcode
         ${X11_INCLUDE_DIR}
+        ${QRENCODE_INCLUDE_DIR}
         ${Boost_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}
         ${Qt5Core_INCLUDE_DIRS}
@@ -153,10 +153,6 @@ target_include_directories(wowlet PUBLIC
 
 if(OPENVR)
     target_include_directories(wowlet PUBLIC ${CMAKE_SOURCE_DIR}/contrib/)
-endif()
-
-if(DONATE_BEG)
-    target_compile_definitions(wowlet PRIVATE DONATE_BEG=1)
 endif()
 
 if(TOR_BIN)
@@ -288,8 +284,6 @@ endif()
 
 # Link random other stuff
 target_link_libraries(wowlet PUBLIC
-        ${ICU_LIBRARIES}
-        openpgp
         Threads::Threads
         ${QRENCODE_LIBRARY}
         )
@@ -356,15 +350,18 @@ install(TARGETS wowlet
         )
 
 
-message(STATUS "=============================================")
-message(STATUS "VERSION_MAJOR: ${VERSION_MAJOR}")
-message(STATUS "VERSION_MINOR: ${VERSION_MINOR}")
-message(STATUS "VERSION_REVISION: ${VERSION_REVISION}")
-message(STATUS "STATIC: ${STATIC}")
-message(STATUS "VERSION: ${VERSION}")
-message(STATUS "Include Valve's OpenVR library: ${OPENVR}")
-message(STATUS "This build is for Android: ${ANDROID}")
-message(STATUS "This build is for testing the Android app on desktop: ${ANDROID_DEBUG}")
-message(STATUS "TOR_BIN: ${TOR_BIN}")
-message(STATUS "DONATE_BEG: ${DONATE_BEG}")
-message(STATUS "=============================================")
+message(STATUS "\n====================================== SUMMARY")
+if(GIT_FOUND)
+    execute_process(COMMAND git rev-parse "HEAD" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/wownero OUTPUT_VARIABLE _WOWNERO_HEAD OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(NOT _WOWNERO_HEAD STREQUAL WOWNERO_HEAD)
+        message(STATUS "[+] WOWNERO HEAD: ${_WOWNERO_HEAD} ... while CMake requested ${WOWNERO_HEAD}")
+    else()
+        message(STATUS "[+] WOWNERO HEAD: ${WOWNERO_HEAD}")
+    endif()
+endif()
+message(STATUS "[+] VERSION: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_REVISION}-${VERSION}")
+message(STATUS "[+] STATIC: ${STATIC}")
+message(STATUS "[+] Include Valve's OpenVR library: ${OPENVR}")
+message(STATUS "[+] This build is for Android: ${ANDROID}")
+message(STATUS "[+] This build is for testing the Android app on desktop: ${ANDROID_DEBUG}")
+message(STATUS "[+] TOR_BIN: ${TOR_BIN}")

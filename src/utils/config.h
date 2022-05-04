@@ -25,7 +25,6 @@ public:
         warnOnTestnet,
         warnOnAlpha,
         homeWidget,
-        donateBeg,
         autoOpenWalletPath,
         skin,
         openVRSkin,

@@ -70,6 +70,7 @@ public:
     static bool xdgDesktopEntryWrite(const QString &path);
     static void xdgRefreshApplications();
     static bool xdgDesktopEntryRegister();
+    static unsigned int countAlphaNum(const QByteArray &line);
     static bool pixmapWrite(const QString &path, const QPixmap &pixmap);
     static QFont relativeFont(int delta);
     static double roundSignificant(double N, double n);
