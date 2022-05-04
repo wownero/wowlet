@@ -141,6 +141,7 @@ target_include_directories(wowlet PUBLIC
         ${X11_INCLUDE_DIR}
         ${QRENCODE_INCLUDE_DIR}
         ${Boost_INCLUDE_DIRS}
+        ${Iconv_INCLUDE_DIRS}
         ${OPENSSL_INCLUDE_DIR}
         ${Qt5Core_INCLUDE_DIRS}
         ${Qt5Widgets_INCLUDE_DIRS}
@@ -237,6 +238,7 @@ target_link_libraries(wowlet PUBLIC
         ${Boost_LIBRARIES}
         ${OPENSSL_LIBRARIES}
         ${CMAKE_DL_LIBS}
+        ${Iconv_LIBRARIES}
         ${EXTRA_LIBRARIES})
 
 # Link Qt libraries
@@ -365,3 +367,20 @@ message(STATUS "[+] Include Valve's OpenVR library: ${OPENVR}")
 message(STATUS "[+] This build is for Android: ${ANDROID}")
 message(STATUS "[+] This build is for testing the Android app on desktop: ${ANDROID_DEBUG}")
 message(STATUS "[+] TOR_BIN: ${TOR_BIN}")
+
+message(STATUS "[+] OpenSSL")
+message(STATUS "  - version: ${OPENSSL_VERSION}")
+message(STATUS "  - dirs: ${OPENSSL_INCLUDE_DIR}")
+message(STATUS "  - libs: ${OPENSSL_LIBRARIES} ${OPENSSL_SSL_LIBRARIES}")
+
+message(STATUS "[+] Boost")
+message(STATUS "  - version: ${Boost_VERSION}")
+message(STATUS "  - dirs: ${Boost_INCLUDE_DIRS}")
+message(STATUS "  - libs: ${Boost_LIBRARIES}")
+
+if(Iconv_FOUND)
+    message(STATUS "[+] Iconv")
+    message(STATUS "  - version: ${Iconv_VERSION}")
+    message(STATUS "  - libs: ${Iconv_LIBRARIES}")
+    message(STATUS "  - dirs: ${Iconv_INCLUDE_DIRS}")
+endif()

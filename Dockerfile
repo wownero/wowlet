@@ -415,3 +415,5 @@ RUN mkdir linuxdeployqt && \
     chmod +x linuxdeployqt-7-x86_64.AppImage && \
     ./linuxdeployqt-7-x86_64.AppImage --appimage-extract && \
     rm linuxdeployqt-7-x86_64.AppImage
+
+RUN git config --global --add safe.directory /wowlet

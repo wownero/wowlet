@@ -237,7 +237,6 @@ CMD set -ex \
     -DUSE_SINGLE_BUILDDIR=ON \
     -DMANUAL_SUBMODULES=1 \
     -DUSE_SINGLE_BUILDDIR=ON \
-    -DQML=ON \
     -DANDROID=ON \
     ../../.. \
     && PATH=${HOST_PATH} make generate_translations_header \

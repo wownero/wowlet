@@ -142,18 +142,12 @@ endif()
 if(MINGW)
     set(Boost_THREADAPI win32)
 endif()
-
-find_package(Boost 1.58 REQUIRED COMPONENTS
-        system
-        filesystem
-        thread
-        atomic
-        date_time
-        chrono
-        regex
-        serialization
-        program_options
-        locale)
+set(_BOOST_COMPONENTS system filesystem thread date_time chrono regex serialization program_options locale)
+if(APPLE)
+    # atomic is only present/needed on Apple
+    list(APPEND _BOOST_COMPONENTS atomic)
+endif()
+find_package(Boost 1.58 REQUIRED COMPONENTS ${_BOOST_COMPONENTS})
 
 if(UNIX AND NOT APPLE AND NOT ANDROID)
     if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -221,7 +215,7 @@ if(TOR_BIN)
         endif()
 
         # copy the Tor executable over
-        set(TOR_COPY_CMD "cp -u ${TOR_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/exec/tor")
+        set(TOR_COPY_CMD "cp ${TOR_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/exec/tor")
         message(STATUS "Tor cmd: ${TOR_COPY_CMD}")
 
         execute_process(COMMAND bash -c "${TOR_COPY_CMD}" RESULT_VARIABLE ret)
@@ -232,9 +226,11 @@ if(TOR_BIN)
     endif()
 
     # get Tor version while we're at it
-    execute_process(COMMAND bash -c "${TOR_BIN} --version --quiet | head -n1" OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE out RESULT_VARIABLE ret)
-    if (ret EQUAL "0")
-        set(TOR_VERSION "${out}")
+    if(NOT TOR_VERSION)
+        execute_process(COMMAND bash -c "${TOR_BIN} --version --quiet | head -n1" OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE out RESULT_VARIABLE ret)
+        if (ret EQUAL "0")
+            set(TOR_VERSION "${out}")
+        endif()
     endif()
     message(STATUS "Tor version: ${TOR_VERSION}")
     configure_file("cmake/config-wowlet.h.cmake" "${CMAKE_CURRENT_SOURCE_DIR}/src/config-wowlet.h")
@@ -245,6 +241,8 @@ else()
 endif()
 
 if(MINGW)
+    find_package(Iconv REQUIRED)
+
     string(REGEX MATCH "^[^/]:/[^/]*" msys2_install_path "${CMAKE_C_COMPILER}")
     message(STATUS "MSYS location: ${msys2_install_path}")
     set(CMAKE_INCLUDE_PATH "${msys2_install_path}/mingw${ARCH_WIDTH}/include")

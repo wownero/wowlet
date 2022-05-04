@@ -615,7 +615,8 @@ Rectangle {
                 color: "black"
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.verticalCenter: parent.verticalCenter
-                //font.family: ComicMonoBold.name;
+                font.pointSize: 14
+                font.family: ComicMonoBold.name;
             }
         }
     }
