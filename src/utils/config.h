@@ -23,7 +23,6 @@ public:
         checkForAppUpdates,
         warnOnStagenet,
         warnOnTestnet,
-        warnOnAlpha,
         homeWidget,
         autoOpenWalletPath,
         skin,

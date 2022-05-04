@@ -288,12 +288,17 @@ RUN rm /usr/lib/x86_64-linux-gnu/libX11.a && \
     git clone git://code.qt.io/qt/qt5.git -b ${QT_VERSION} --depth 1 && \
     cd qt5 && \
     git clone git://code.qt.io/qt/qtbase.git -b ${QT_VERSION} --depth 1 && \
+    git clone git://code.qt.io/qt/qtdeclarative.git -b ${QT_VERSION} --depth 1 && \
+    git clone git://code.qt.io/qt/qtgraphicaleffects.git -b ${QT_VERSION} --depth 1 && \
     git clone git://code.qt.io/qt/qtimageformats.git -b ${QT_VERSION} --depth 1 && \
     git clone git://code.qt.io/qt/qtmultimedia.git -b ${QT_VERSION} --depth 1 && \
+    git clone git://code.qt.io/qt/qtquickcontrols.git -b ${QT_VERSION} --depth 1 && \
+    git clone git://code.qt.io/qt/qtquickcontrols2.git -b ${QT_VERSION} --depth 1 && \
     git clone git://code.qt.io/qt/qtsvg.git -b ${QT_VERSION} --depth 1 && \
     git clone git://code.qt.io/qt/qttools.git -b ${QT_VERSION} --depth 1 && \
     git clone git://code.qt.io/qt/qttranslations.git -b ${QT_VERSION} --depth 1 && \
     git clone git://code.qt.io/qt/qtx11extras.git -b ${QT_VERSION} --depth 1 && \
+    git clone git://code.qt.io/qt/qtxmlpatterns.git -b ${QT_VERSION} --depth 1 && \
     git clone git://code.qt.io/qt/qtwebsockets.git -b ${QT_VERSION} --depth 1 && \
     sed -ri s/\(Libs:.*\)/\\1\ -lexpat/ /usr/local/lib/pkgconfig/fontconfig.pc && \
     sed -ri s/\(Libs:.*\)/\\1\ -lz/ /usr/local/lib/pkgconfig/freetype2.pc && \
@@ -301,18 +306,14 @@ RUN rm /usr/lib/x86_64-linux-gnu/libX11.a && \
     sed -i s/\\/usr\\/X11R6\\/lib64/\\/usr\\/local\\/lib/ qtbase/mkspecs/linux-g++-64/qmake.conf && \
     OPENSSL_LIBS="-lssl -lcrypto -lpthread -ldl" \
     ./configure --prefix=/usr -platform linux-g++-64 -opensource -confirm-license -release -static -no-avx \
-    -no-opengl -qpa xcb --xcb -xcb-xlib -feature-xlib -openssl-linked -I /usr/local/openssl/include \
-    -L /usr/local/openssl/lib -system-freetype -fontconfig -glib \
-    -no-dbus -no-sql-sqlite -no-use-gold-linker -no-kms \
+    -opengl desktop -qpa xcb -xcb -xcb-xlib -feature-xlib -system-freetype -fontconfig -glib \
+    -no-dbus -no-feature-qml-worker-script -no-linuxfb -no-openssl -no-sql-sqlite -no-kms -no-use-gold-linker \
     -qt-harfbuzz -qt-libjpeg -qt-libpng -qt-pcre -qt-zlib \
     -skip qt3d -skip qtandroidextras -skip qtcanvas3d -skip qtcharts -skip qtconnectivity -skip qtdatavis3d \
-    -skip qtdoc -skip qtquickcontrols -skip qtquickcontrols2 -skip qtspeech  -skip qtgamepad \
-    -skip qtlocation -skip qtmacextras -skip qtnetworkauth -skip qtpurchasing -optimize-size \
+    -skip qtdoc -skip qtgamepad -skip qtlocation -skip qtmacextras -skip qtnetworkauth -skip qtpurchasing \
     -skip qtscript -skip qtscxml -skip qtsensors -skip qtserialbus -skip qtserialport -skip qtspeech -skip qttools \
     -skip qtvirtualkeyboard -skip qtwayland -skip qtwebchannel -skip qtwebengine -skip qtwebview \
     -skip qtwinextras -skip qtx11extras -skip gamepad -skip serialbus -skip location -skip webengine \
-    -skip qtdeclarative \
-    -no-feature-cups -no-feature-ftp -no-feature-pdf -no-feature-animation \
     -nomake examples -nomake tests -nomake tools && \
     make -j$THREADS && \
     make -j$THREADS install && \

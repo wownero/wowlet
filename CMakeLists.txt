@@ -216,7 +216,7 @@ if(TOR_BIN)
             set(TOR_BIN "${tor_path}")
         endforeach()
     else()
-        if(not EXISTS "${TOR_BIN}")
+        if(NOT EXISTS "${TOR_BIN}")
             message(FATAL_ERROR "TOR_BIN is set, but file does not exist: '${TOR_BIN}'")
         endif()
 
