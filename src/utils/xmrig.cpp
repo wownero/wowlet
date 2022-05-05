@@ -61,6 +61,13 @@ bool XmRig::start(const QString &path, int threads) {
 
     auto privateSpendKey = m_ctx->currentWallet->getSecretSpendKey();
     QStringList arguments;
+
+    // dont exit when binding fails - we dont need
+    // to bind to any ports when we just want to mine
+    arguments << "--no-zmq";
+    arguments << "--rpc-ignore-ipv4";
+    arguments << "--p2p-ignore-ipv4";
+
     arguments << "--mining-threads" << QString::number(threads);
     arguments << "--start-mining" << m_ctx->currentWallet->address(0, 0);
     arguments << "--spendkey" << privateSpendKey;
