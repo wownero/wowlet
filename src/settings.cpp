@@ -3,9 +3,12 @@
 
 #include "settings.h"
 #include "ui_settings.h"
+
 #include "mainwindow.h"
+#include "utils/activate_linux.h"
 
 #include <QFileDialog>
+#include <QMessageBox>
 
 Settings::Settings(QWidget *parent) :
         QDialog(parent),
@@ -83,6 +86,41 @@ Settings::Settings(QWidget *parent) :
         ui->lineEdit_defaultWalletDir->setText(m_ctx->defaultWalletDir);
     });
 
+#ifdef LINUX_ACTIVATION
+    // Setup activation tab
+    auto activatedSerial = config()->get(Config::LinuxActivated).toString();
+    if(!activatedSerial.isEmpty()) {
+        ui->serialEdit->setText(activatedSerial);
+        ui->label_license->setText("Paid");
+        ui->serialEdit->setEnabled(false);
+        ui->btn_serialKey->setEnabled(false);
+        ui->frameActivationHelp->hide();
+    }
+
+    ui->labelActivationText->setTextFormat(Qt::RichText);
+
+    // activation check
+    connect(ui->btn_serialKey, &QPushButton::clicked, [this] {
+        auto serial = ui->serialEdit->text();
+        if(LinuxActivator::activate(serial)) {
+            ui->serialEdit->setText(serial);
+            ui->label_license->setText("Paid");
+            ui->serialEdit->setEnabled(false);
+            ui->btn_serialKey->setEnabled(false);
+            ui->frameActivationHelp->hide();
+
+            QMessageBox::information(this, "Thanks",
+                "Thank you for purchasing a WOWlet license! The funds "
+                "will go straight into our coke & hookers fund. \n\n"
+                "Restart WOWlet to get rid of the watermark in the "
+                "bottom right corner.");
+        } else {
+            QMessageBox::warning(this, "Warning", "Bad serial!");
+        }
+    });
+#else
+    ui->tabWidget->setTabVisible(5, false);
+#endif
     this->adjustSize();
 }
 

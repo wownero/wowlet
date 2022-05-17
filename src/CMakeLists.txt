@@ -152,6 +152,13 @@ target_include_directories(wowlet PUBLIC
         ${Qt5WebSockets_INCLUDE_DIRS}
         )
 
+if(LINUX_ACTIVATION)
+    target_include_directories(wowlet PUBLIC
+            ${CAIRO_INCLUDE_DIRS}
+            ${XFIXES_INCLUDE_DIR}
+            )
+endif()
+
 if(OPENVR)
     target_include_directories(wowlet PUBLIC ${CMAKE_SOURCE_DIR}/contrib/)
 endif()
@@ -181,8 +188,8 @@ if(STATIC)
     target_compile_definitions(wowlet PRIVATE STATIC=1)
 endif()
 
-if(STATIC)
-    target_compile_definitions(wowlet PRIVATE STATIC=1)
+if(LINUX_ACTIVATION)
+    target_compile_definitions(wowlet PRIVATE LINUX_ACTIVATION=1)
 endif()
 
 if("$ENV{DRONE}" STREQUAL "true")
@@ -290,6 +297,15 @@ target_link_libraries(wowlet PUBLIC
         ${QRENCODE_LIBRARY}
         )
 
+# Link Cairo and Xfixes
+if(LINUX_ACTIVATION)
+    target_link_libraries(wowlet PUBLIC
+            ${CAIRO_LIBRARIES}
+            ${XFIXES_LIBRARY}
+            ${X11_Xinerama_LIB}
+            )
+endif()
+
 # Link scanner
 if(WITH_SCANNER)
     target_link_libraries(wowlet PUBLIC qrdecoder qrscanner)
@@ -367,11 +383,25 @@ message(STATUS "[+] Include Valve's OpenVR library: ${OPENVR}")
 message(STATUS "[+] This build is for Android: ${ANDROID}")
 message(STATUS "[+] This build is for testing the Android app on desktop: ${ANDROID_DEBUG}")
 message(STATUS "[+] TOR_BIN: ${TOR_BIN}")
+message(STATUS "[+] LINUX_ACTIVATION: ${LINUX_ACTIVATION}")
 
 message(STATUS "[+] OpenSSL")
 message(STATUS "  - version: ${OPENSSL_VERSION}")
 message(STATUS "  - dirs: ${OPENSSL_INCLUDE_DIR}")
 message(STATUS "  - libs: ${OPENSSL_LIBRARIES} ${OPENSSL_SSL_LIBRARIES}")
+
+if(CAIRO_FOUND)
+    message(STATUS "[+] Cairo")
+    message(STATUS "  - version: ${CAIRO_VERSION}")
+    message(STATUS "  - dirs: ${CAIRO_INCLUDE_DIRS}")
+    message(STATUS "  - libs: ${CAIRO_LIBRARIES}")
+endif()
+
+if(XFIXES_FOUND)
+    message(STATUS "[+] Xfixes")
+    message(STATUS "  - dirs: ${XFIXES_INCLUDE_DIR}")
+    message(STATUS "  - libs: ${XFIXES_LIBRARY}")
+endif()
 
 message(STATUS "[+] Boost")
 message(STATUS "  - version: ${Boost_VERSION}")

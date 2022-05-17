@@ -50,7 +50,8 @@ static const QHash<Config::ConfigKey, ConfigDirective> configStrings = {
         {Config::redditFrontend, {QS("redditFrontend"), "old.reddit.com"}},
         {Config::showHistorySyncNotice, {QS("showHistorySyncNotice"), true}},
         {Config::ignoreUpdateWarning, {QS("ignoreUpdateWarning"), ""}},
-        {Config::suchWowTipAmount, {QS("suchWowTipAmount"), 0.75}}
+        {Config::suchWowTipAmount, {QS("suchWowTipAmount"), 0.75}},
+        {Config::LinuxActivated, {QS("linuxActivated"), ""}}
 };
 
 
