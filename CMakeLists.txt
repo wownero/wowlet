@@ -30,6 +30,11 @@ set(BUILD_GUI_DEPS ON)
 set(BUILD_64 ON CACHE BOOL "Build 64-bit binaries")
 set(INSTALL_VENDORED_LIBUNBOUND ${STATIC})
 set(USE_SINGLE_BUILDDIR ON)
+if(UNIX AND NOT APPLE)
+    set(LINUX_ACTIVATION ON)
+else()
+    set(LINUX_ACTIVATION OFF)
+endif()
 
 # Are we in debug mode?
 set(_CMAKE_BUILD_TYPE "")
@@ -360,6 +365,11 @@ if(STATIC)
     if(MINGW)
         add_linker_flag_if_supported(-static STATIC_FLAGS)
     endif()
+endif()
+
+if(LINUX_ACTIVATION)
+    find_package(Cairo REQUIRED)
+    find_package(Xfixes REQUIRED)
 endif()
 
 # With GCC 6.1.1 the compiled binary malfunctions due to aliasing. Until that

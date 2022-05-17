@@ -52,7 +52,8 @@ public:
         redditFrontend,
         showHistorySyncNotice,
         ignoreUpdateWarning,
-        suchWowTipAmount
+        suchWowTipAmount,
+        LinuxActivated
     };
 
     ~Config() override;
