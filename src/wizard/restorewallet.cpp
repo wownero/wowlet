@@ -9,7 +9,7 @@
 #include <QPlainTextEdit>
 #include <QMessageBox>
 
-#include <monero_seed/wordlist.hpp>  // tevador 14 word
+#include <wownero_seed/wordlist.hpp>  // tevador 14 word
 #include "utils/WowletSeed.h"
 
 RestorePage::RestorePage(AppContext *ctx, QWidget *parent) :

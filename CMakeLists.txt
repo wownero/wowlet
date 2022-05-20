@@ -119,23 +119,8 @@ set(HIDAPI_FOUND OFF)
 # QrEncode
 find_package(QREncode REQUIRED)
 
-# Tevador 14 word Monero seed
-find_package(monero-seed CONFIG)
-if(NOT monero-seed_FOUND)
-  if(FETCH_DEPS)
-    FetchContent_Declare(monero-seed
-      GIT_REPOSITORY https://git.wownero.com/wowlet/monero-seed.git)
-    FetchContent_GetProperties(monero-seed)
-    if(NOT monero-seed_POPULATED)
-      message(STATUS "Fetching monero-seed")
-      FetchContent_Populate(monero-seed)
-      add_subdirectory(${monero-seed_SOURCE_DIR} ${monero-seed_BINARY_DIR})
-    endif()
-    add_library(monero-seed::monero-seed ALIAS monero-seed)
-  else()
-    message(FATAL_ERROR "monero-seed was not installed and fetching deps is disabled")
-  endif()
-endif()
+# Tevador 14 word seed (https://git.wownero.com/wowlet/wownero-seed)
+find_package(wownero-seed CONFIG REQUIRED)
 
 # Boost
 if(DEBUG)

@@ -8,7 +8,7 @@
 #include "RestoreHeightLookup.h"
 
 enum SeedType {
-    MONERO = 0, // 25 word seeds
+    WOWNERO = 0, // 25 word seeds
     TEVADOR     // 14 word seeds
 };
 
@@ -28,7 +28,7 @@ struct WowletSeed {
     QString errorString;
 
     explicit WowletSeed(RestoreHeightLookup *lookup,
-                          const QString &coin = "monero",
+                          const QString &coin = "wownero",
                           const QString &language = "English",
                           const QStringList &mnemonic = {})
             : lookup(lookup), coin(coin), language(language), mnemonic(mnemonic)
@@ -36,7 +36,7 @@ struct WowletSeed {
         // Generate a new mnemonic if none was given
         if (this->mnemonic.length() == 0) {
             this->time = std::time(nullptr);
-            monero_seed seed(this->time, coin.toStdString());
+            wownero_seed seed(this->time, coin.toStdString());
 
             std::stringstream buffer;
             buffer << seed;
@@ -50,7 +50,7 @@ struct WowletSeed {
         }
 
         if (this->mnemonic.length() == 25) {
-            this->seedType = SeedType::MONERO;
+            this->seedType = SeedType::WOWNERO;
         }
         else if (this->mnemonic.length() == 14) {
             this->seedType = SeedType::TEVADOR;
@@ -61,7 +61,7 @@ struct WowletSeed {
 
         if (seedType == SeedType::TEVADOR) {
             try {
-                monero_seed seed(this->mnemonic.join(" ").toStdString(), coin.toStdString());
+                wownero_seed seed(this->mnemonic.join(" ").toStdString(), coin.toStdString());
 
                 this->time = seed.date();
                 this->setRestoreHeight();
