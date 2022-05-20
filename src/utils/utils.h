@@ -12,7 +12,7 @@
 #include <QtAndroid>
 #endif
 
-#include <monero_seed/monero_seed.hpp>
+#include <wownero_seed/wownero_seed.hpp>
 
 #include "networktype.h"
 #include "libwalletqt/Wallet.h"

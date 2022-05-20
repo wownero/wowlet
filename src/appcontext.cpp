@@ -660,7 +660,7 @@ void AppContext::createWallet(WowletSeed seed, const QString &path, const QStrin
         wallet = this->walletManager->createDeterministicWalletFromSpendKey(path, password, seed.language, this->networkType, seed.spendKey, seed.restoreHeight, this->kdfRounds);
         wallet->setCacheAttribute("wowlet.seed", seed.mnemonic.join(" "));
     }
-    if (seed.seedType == SeedType::MONERO) {
+    if (seed.seedType == SeedType::WOWNERO) {
         wallet = this->walletManager->recoveryWallet(path, password, seed.mnemonic.join(" "), "", this->networkType, seed.restoreHeight, this->kdfRounds);
     }
 
