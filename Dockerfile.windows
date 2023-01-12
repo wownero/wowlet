@@ -1,7 +1,7 @@
 FROM ubuntu:20.04
 
 ARG THREADS=1
-ARG QT_VERSION=5.15.2
+ARG QT_VERSION=v5.15.2
 ENV SOURCE_DATE_EPOCH=1397818193
 
 ENV OPENSSL_ROOT_DIR=/usr/local/openssl/
@@ -96,7 +96,7 @@ RUN git clone -b v1.2.11 --depth 1 https://github.com/madler/zlib && \
     rm -rf $(pwd)
 
 # libpng -> libqrencode
-RUN git clone -b libpng16 --depth 1 https://github.com/glennrp/libpng.git && \
+RUN git clone -b libpng16 https://github.com/glennrp/libpng.git && \
     cd libpng && \
     git reset --hard a37d4836519517bdce6cb9d956092321eca3e73b && \
     CPPFLAGS="-I/depends/x86_64-w64-mingw32/include" LDFLAGS="-L/depends/x86_64-w64-mingw32/lib" \
@@ -175,9 +175,9 @@ RUN git clone -b tor-0.4.5.7 --depth 1 https://git.torproject.org/tor.git && \
     rm -rf $(pwd) && \
     strip -s -D /usr/local/tor/bin/tor.exe
 
-RUN git clone https://git.wownero.com/wowlet/monero-seed.git && \
-    cd monero-seed && \
-    git reset --hard 4674ef09b6faa6fe602ab5ae0b9ca8e1fd7d5e1b && \
+RUN git clone https://git.wownero.com/wowlet/wownero-seed.git && \
+    cd wownero-seed && \
+    git reset --hard ef6910b6bb3b61757c36e2e5db0927d75f1731c8 && \
     cmake -DCMAKE_INSTALL_PREFIX=/depends/x86_64-w64-mingw32 \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_TOOLCHAIN_FILE=/depends/x86_64-w64-mingw32/share/toolchain.cmake -Bbuild && \
@@ -186,3 +186,4 @@ RUN git clone https://git.wownero.com/wowlet/monero-seed.git && \
     rm -rf $(pwd)
 
 RUN git config --global --add safe.directory /wowlet
+RUN git config --global --add safe.directory /wowlet/wownero

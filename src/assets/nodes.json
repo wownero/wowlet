@@ -1,13 +1,35 @@
 {
   "mainnet": {
     "tor": [
-      "a2b6ain7ozgpxhzxkhl7vrnphrlvn4cqvibyhpcvyfbbgare6bm5m2yd.onion:18081"
+      "v2admi6gbeprxnk6i2oscizhgy4v5ixu6iezkhj5udiwbfjjs2w7dnid.onion:34568",
+      "awbibkoaa67jhuaqes4n2243gd6vtidjzqj2djukrubp2eudrmxr5mid.onion:34568",
+      "7ftpbpp6rbgqi5kjmhyin46essnh3eqb3m3rhfi7r2fr33iwkeuer3yd.onion:34568",
+      "j7rf2jcccizcp47y5moehguyuqdpg4lusk642sw4nayuruitqaqbc7ad.onion:34568",
+      "aje53o5z5twne5q2ljw44zkahhsuhjtwaxuburxddbf7n4pfsj4rj6qd.onion:34568",
+      "nepc4lxndsooj2akn7ofrj3ooqc25242obchcag6tw3f2mxrms2uuvyd.onion:34568",
+      "666l2ajxqjgj5lskvbokvworjysgvqag4oitokjuy7wz6juisul4jqad.onion:34568",
+      "ty7ppqozzodz75audgvkprekiiqsovbyrkfdjwadrkbe3etyzloatxad.onion:34568",
+      "ewynwpnprbgqllv2syn3drjdrqkw7ehoeg73znelm6mevvmpddexsoqd.onion:34568",
+      "mqkiqwmhhpqtzlrf26stv7jvtaudbyzkbg3lttkmvvvauzgtxm62tgyd.onion:34568",
+      "zao3w6isidntdbnyee5ufs7fyzmv7wzchpw32i3uo5eldjwmo4bxg2qd.onion:34568"
     ],
     "clearnet": [
-      "wownero.fyi:34568",
-      "wow.pwned.systems:34568",
-      "de1.wownodes.com:34568",
-      "global.wownodes.com:34568"
+      "global.wownodes.com:34568",
+      "super.fast.node.xmr.pm:34568",
+      "node.wownero.club:34568",
+      "node.suchwow.xyz:34568",
+      "eu-west-1.wow.xmr.pm:34568",
+      "eu-west-2.wow.xmr.pm:34568",
+      "eu-west-3.wow.xmr.pm:34568",
+      "eu-west-4.wow.xmr.pm:34568",
+      "eu-west-5.wow.xmr.pm:34568",
+      "eu-west-6.wow.xmr.pm:34568",
+      "na-west-1.wow.xmr.pm:34568",
+      "much.wow.such.money:34568",
+      "very.wow.such.money:34568",
+      "169.119.33.174:34568",
+      "wow.bot.tips:34568",
+      "idontwanttogototoronto.wow.fail:34568"
     ]
   },
   "stagenet": {

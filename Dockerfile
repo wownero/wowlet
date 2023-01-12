@@ -17,7 +17,6 @@ RUN wget https://www.openssl.org/source/openssl-1.1.1i.tar.gz && \
     cd openssl-1.1.1i && \
     ./config no-shared no-dso --prefix=/usr/local/openssl && \
     make -j$THREADS && \
-    make test && \
     make -j$THREADS install_sw && \
     rm -rf $(pwd)
 
@@ -66,10 +65,10 @@ RUN git clone -b tor-0.4.5.5-rc --depth 1 https://git.torproject.org/tor.git && 
     rm -rf $(pwd) && \
     strip -s -D /usr/local/tor/bin/tor
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 ARG THREADS=1
-ARG QT_VERSION=5.15.2
+ARG QT_VERSION=v5.15.2
 
 ENV CFLAGS="-fPIC"
 ENV CPPFLAGS="-fPIC"
@@ -95,7 +94,7 @@ RUN apt-get update && \
 # libusb
     libudev-dev \
 # fontconfig
-    autopoint gettext gperf libpng12-dev \
+    autopoint gettext gperf libpng-dev \
 # libxcb
     libpthread-stubs0-dev \
 # xorgproto
@@ -161,7 +160,7 @@ RUN git clone -b 0.4.0 --depth 1 https://gitlab.freedesktop.org/xorg/lib/libxcb-
     cd libxcb-util && \
     git reset --hard acf790d7752f36e450d476ad79807d4012ec863b && \
     git submodule init && \
-    git clone --depth 1 https://gitlab.freedesktop.org/xorg/util/xcb-util-m4 m4 && \
+    git clone https://gitlab.freedesktop.org/xorg/util/xcb-util-m4 m4 && \
     git -C m4 reset --hard f662e3a93ebdec3d1c9374382dcc070093a42fed && \
     ./autogen.sh --enable-shared --disable-static && \
     make -j$THREADS && \
@@ -172,7 +171,7 @@ RUN git clone -b 0.4.0 --depth 1 https://gitlab.freedesktop.org/xorg/lib/libxcb-
     cd libxcb-image && \
     git reset --hard d882052fb2ce439c6483fce944ba8f16f7294639 && \
     git submodule init && \
-    git clone --depth 1 https://gitlab.freedesktop.org/xorg/util/xcb-util-m4 m4 && \
+    git clone https://gitlab.freedesktop.org/xorg/util/xcb-util-m4 m4 && \
     git -C m4 reset --hard f662e3a93ebdec3d1c9374382dcc070093a42fed && \
     ./autogen.sh --enable-shared --disable-static && \
     make -j$THREADS && \
@@ -183,7 +182,7 @@ RUN git clone -b 0.4.0 --depth 1 https://gitlab.freedesktop.org/xorg/lib/libxcb-
     cd libxcb-keysyms && \
     git reset --hard 0e51ee5570a6a80bdf98770b975dfe8a57f4eeb1 && \
     git submodule init && \
-    git clone --depth 1 https://gitlab.freedesktop.org/xorg/util/xcb-util-m4 m4 && \
+    git clone https://gitlab.freedesktop.org/xorg/util/xcb-util-m4 m4 && \
     git -C m4 reset --hard f662e3a93ebdec3d1c9374382dcc070093a42fed && \
     ./autogen.sh --enable-shared --disable-static && \
     make -j$THREADS && \
@@ -194,7 +193,7 @@ RUN git clone -b 0.3.9 --depth 1 https://gitlab.freedesktop.org/xorg/lib/libxcb-
     cd libxcb-render-util && \
     git reset --hard 0317caf63de532fd7a0493ed6afa871a67253747 && \
     git submodule init && \
-    git clone --depth 1 https://gitlab.freedesktop.org/xorg/util/xcb-util-m4 m4 && \
+    git clone https://gitlab.freedesktop.org/xorg/util/xcb-util-m4 m4 && \
     git -C m4 reset --hard f662e3a93ebdec3d1c9374382dcc070093a42fed && \
     ./autogen.sh --enable-shared --disable-static && \
     make -j$THREADS && \
@@ -205,7 +204,7 @@ RUN git clone -b 0.4.1 --depth 1 https://gitlab.freedesktop.org/xorg/lib/libxcb-
     cd libxcb-wm && \
     git reset --hard 24eb17df2e1245885e72c9d4bbb0a0f69f0700f2 && \
     git submodule init && \
-    git clone --depth 1 https://gitlab.freedesktop.org/xorg/util/xcb-util-m4 m4 && \
+    git clone https://gitlab.freedesktop.org/xorg/util/xcb-util-m4 m4 && \
     git -C m4 reset --hard f662e3a93ebdec3d1c9374382dcc070093a42fed && \
     ./autogen.sh --enable-shared --disable-static && \
     make -j$THREADS && \
@@ -278,7 +277,6 @@ RUN wget https://www.openssl.org/source/openssl-1.1.1i.tar.gz && \
     cd openssl-1.1.1i && \
     ./config no-shared no-dso --prefix=/usr/local/openssl && \
     make -j$THREADS && \
-    make test && \
     make -j$THREADS install_sw && \
     rm -rf $(pwd)
 
@@ -393,9 +391,9 @@ RUN git clone -b v4.0.2 --depth 1 https://github.com/fukuchi/libqrencode.git && 
     make -j$THREADS install && \
     rm -rf $(pwd)
 
-RUN git clone https://git.wownero.com/wowlet/monero-seed.git && \
-    cd monero-seed && \
-    git reset --hard 4674ef09b6faa6fe602ab5ae0b9ca8e1fd7d5e1b && \
+RUN git clone https://git.wownero.com/wowlet/wownero-seed.git && \
+    cd wownero-seed && \
+    git reset --hard ef6910b6bb3b61757c36e2e5db0927d75f1731c8 && \
     cmake -DCMAKE_BUILD_TYPE=Release -Bbuild && \
     make -Cbuild -j$THREADS && \
     make -Cbuild install && \
@@ -416,4 +414,6 @@ RUN mkdir linuxdeployqt && \
     ./linuxdeployqt-7-x86_64.AppImage --appimage-extract && \
     rm linuxdeployqt-7-x86_64.AppImage
 
+RUN apt-get update && \
+    apt-get -o Dpkg::Options::="--force-confold" install -q -y --force-yes libcairo2-dev libxinerama-dev
 RUN git config --global --add safe.directory /wowlet
