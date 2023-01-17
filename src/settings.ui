@@ -144,11 +144,6 @@
            <string>explore.wownero.com</string>
           </property>
          </item>
-         <item>
-          <property name="text">
-           <string>kryfi.com</string>
-          </property>
-         </item>
         </widget>
        </item>
        <item row="4" column="0">

@@ -239,12 +239,7 @@ QString Utils::copyFromClipboard() {
 }
 
 QString Utils::blockExplorerLink(const QString &txid) {
-    auto explorer = config()->get(Config::blockExplorer).toString();
-    if(explorer.startsWith("kryfi.com")) {
-        return QString("https://kryfi.com/explorer/wownero/tx/%1").arg(txid);
-    } else {
-        return QString("https://explore.wownero.com/tx/%1").arg(txid);
-    }
+    return QString("https://explore.wownero.com/tx/%1").arg(txid);
 }
 
 QStandardItem *Utils::qStandardItem(const QString& text) {
