@@ -239,7 +239,12 @@ QString Utils::copyFromClipboard() {
 }
 
 QString Utils::blockExplorerLink(const QString &txid) {
-    return QString("https://explore.wownero.com/tx/%1").arg(txid);
+    auto explorer = config()->get(Config::blockExplorer).toString();
+    if(explorer.startsWith("muchwow.lol")) {
+        return QString("https://muchwow.lol/tx?id=%1").arg(txid);
+    } else {
+        return QString("https://explore.wownero.com/tx/%1").arg(txid);
+    }
 }
 
 QStandardItem *Utils::qStandardItem(const QString& text) {

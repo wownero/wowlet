@@ -144,6 +144,11 @@
            <string>explore.wownero.com</string>
           </property>
          </item>
+         <item>
+          <property name="text">
+           <string>muchwow.lol</string>
+          </property>
+         </item>
         </widget>
        </item>
        <item row="4" column="0">
