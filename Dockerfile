@@ -280,6 +280,26 @@ RUN wget https://www.openssl.org/source/openssl-1.1.1i.tar.gz && \
     make -j$THREADS install_sw && \
     rm -rf $(pwd)
 
+RUN wget https://github.com/libexpat/libexpat/releases/download/R_2_4_8/expat-2.4.8.tar.bz2 && \
+    echo "a247a7f6bbb21cf2ca81ea4cbb916bfb9717ca523631675f99b3d4a5678dcd16 expat-2.4.8.tar.bz2" | sha256sum -c && \
+    tar -xf expat-2.4.8.tar.bz2 && \
+    rm expat-2.4.8.tar.bz2 && \
+    cd expat-2.4.8 && \
+    ./configure --enable-static --disable-shared --prefix=/usr/local/expat/ && \
+    make -j$THREADS && \
+    make -j$THREADS install && \
+    rm -rf $(pwd)
+
+RUN wget https://www.nlnetlabs.nl/downloads/unbound/unbound-1.16.2.tar.gz && \
+    echo "2e32f283820c24c51ca1dd8afecfdb747c7385a137abe865c99db4b257403581 unbound-1.16.2.tar.gz" | sha256sum -c && \
+    tar -xzf unbound-1.16.2.tar.gz && \
+    rm unbound-1.16.2.tar.gz && \
+    cd unbound-1.16.2 && \
+    ./configure --disable-shared --enable-static --without-pyunbound --with-libexpat=/usr/local/expat/ --with-ssl=/usr/local/openssl/ --with-libevent=no --without-pythonmodule --disable-flto --with-pthreads --with-libunbound-only --with-pic && \
+    make -j$THREADS && \
+    make -j$THREADS install && \
+    rm -rf $(pwd)
+
 RUN rm /usr/lib/x86_64-linux-gnu/libX11.a && \
     rm /usr/lib/x86_64-linux-gnu/libXext.a && \
     rm /usr/lib/x86_64-linux-gnu/libX11-xcb.a && \

@@ -4,10 +4,10 @@ project(wowlet)
 message(STATUS "Initiating compile using CMake ${CMAKE_VERSION}")
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-set(VERSION_MAJOR "3")
-set(VERSION_MINOR "2")
+set(VERSION_MAJOR "4")
+set(VERSION_MINOR "0")
 set(VERSION_REVISION "0")
-set(VERSION "beta-6")
+set(VERSION "beta-7")
 
 option(FETCH_DEPS "Download dependencies if they are not found" ON)
 option(OPENVR "Include OpenVR support")
@@ -25,7 +25,7 @@ include(FindCcache)
 include(CheckIncludeFile)
 include(CheckSymbolExists)
 
-set(WOWNERO_HEAD "cf3bba3aee00d9d3e3f902f66f3710d820d3bdfb")
+set(WOWNERO_HEAD "a21819cc22587e16af00e2c3d8f70156c11310a0")
 set(BUILD_GUI_DEPS ON)
 set(BUILD_64 ON CACHE BOOL "Build 64-bit binaries")
 set(INSTALL_VENDORED_LIBUNBOUND ${STATIC})
@@ -115,6 +115,9 @@ message(STATUS "libsodium: libraries at ${SODIUM_LIBRARY}")
 
 # HIDApi
 set(HIDAPI_FOUND OFF)
+
+# Unbound
+find_package(Unbound REQUIRED)
 
 # QrEncode
 find_package(QREncode REQUIRED)

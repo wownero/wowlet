@@ -246,6 +246,7 @@ target_link_libraries(wowlet PUBLIC
         ${OPENSSL_LIBRARIES}
         ${CMAKE_DL_LIBS}
         ${Iconv_LIBRARIES}
+        /usr/local/lib/libunbound.a
         ${EXTRA_LIBRARIES})
 
 # Link Qt libraries
