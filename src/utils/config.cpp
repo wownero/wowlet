@@ -26,7 +26,7 @@ static const QHash<Config::ConfigKey, ConfigDirective> configStrings = {
         {Config::openVRSkin,{QS("openVRSkin"), "default"}},
         {Config::openVRStreamerMode,{QS("openVRStreamerMode"), false}},
         {Config::preferredFiatCurrency,{QS("preferredFiatCurrency"), "USD"}},
-        {Config::blockExplorer,{QS("blockExplorer"), "kryfi.com"}},
+        {Config::blockExplorer,{QS("blockExplorer"), "muchwow.lol"}},
         {Config::walletDirectory,{QS("walletDirectory"), ""}},
         {Config::autoOpenWalletPath,{QS("autoOpenWalletPath"), ""}},
         {Config::walletPath,{QS("walletPath"), ""}},
