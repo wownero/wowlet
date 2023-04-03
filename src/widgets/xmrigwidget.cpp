@@ -63,6 +63,10 @@ XMRigWidget::XMRigWidget(AppContext *ctx, QWidget *parent) :
     if(!path.isEmpty())
         ui->lineEdit_path->setText(path);
 
+    auto extraArgs = config()->get(Config::extraArgs).toString();
+    if(!extraArgs.isEmpty())
+        ui->extraArgs->setText(extraArgs);
+
     connect(ui->lineEdit_path, &QLineEdit::textChanged, [=] {
       config()->set(Config::wownerodPath, ui->lineEdit_path->text().trimmed());
     });
@@ -208,7 +212,8 @@ void XMRigWidget::onClearClicked() {
 
 void XMRigWidget::onStartClicked() {
     auto binPath = config()->get(Config::wownerodPath).toString();
-    if(!m_ctx->XMRig->start(binPath, m_threads)) return;
+    auto extraArgs = config()->get(Config::extraArgs).toString();
+    if(!m_ctx->XMRig->start(binPath, m_threads, extraArgs)) return;
 
     ui->btn_start->setEnabled(false);
     ui->btn_stop->setEnabled(true);

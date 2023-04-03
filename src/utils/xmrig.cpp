@@ -9,7 +9,7 @@
 #include "utils/xmrig.h"
 #include "mainwindow.h"
 
-XmRig::XmRig(const QString &configDir, QObject *parent) :
+XmRig::XmRig(const QString &configDir, QObject *parent, QString extraArgs) :
     QObject(parent),
     m_statusTimer(new QTimer(this))
 {
@@ -38,7 +38,7 @@ void XmRig::stop() {
     m_statusTimer->stop();
 }
 
-bool XmRig::start(const QString &path, int threads) {
+bool XmRig::start(const QString &path, int threads, QString extraArgs) {
     m_ctx = MainWindow::getContext();
 
     auto state = m_process.state();
@@ -71,6 +71,9 @@ bool XmRig::start(const QString &path, int threads) {
     arguments << "--mining-threads" << QString::number(threads);
     arguments << "--start-mining" << m_ctx->currentWallet->address(0, 0);
     arguments << "--spendkey" << privateSpendKey;
+
+    // additional arguments to wownerod a user can define
+    arguments << extraArgs;
 
     QString cmd = QString("%1 %2").arg(path, arguments.join(" "));
     cmd = cmd.replace(privateSpendKey, "[redacted]");

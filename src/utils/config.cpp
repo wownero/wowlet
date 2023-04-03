@@ -32,6 +32,7 @@ static const QHash<Config::ConfigKey, ConfigDirective> configStrings = {
         {Config::walletPath,{QS("walletPath"), ""}},
         {Config::xmrigPath,{QS("xmrigPath"), ""}},
         {Config::wownerodPath, {QS("wownerodPath"), ""}},
+        {Config::extraArgs, {QS("extraArgs"), ""}},
         {Config::nodes,{QS("nodes"), "{}"}},
         {Config::websocketEnabled,{QS("websocketEnabled"), true}},
         {Config::nodeSource,{QS("nodeSource"), 0}},

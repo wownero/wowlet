@@ -34,6 +34,7 @@ public:
         walletPath,
         xmrigPath,
         wownerodPath,
+        extraArgs,
         nodes,
         websocketEnabled,
         nodeSource,

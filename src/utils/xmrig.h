@@ -27,10 +27,10 @@ class XmRig : public QObject
 Q_OBJECT
 
 public:
-    explicit XmRig(const QString &configDir, QObject *parent = nullptr);
+    explicit XmRig(const QString &configDir, QObject *parent = nullptr, QString extraArgs = nullptr);
     void prepare();
 
-    bool start(const QString &path, int threads);
+    bool start(const QString &path, int threads, QString extraArgs);
     void stop();
 
     DaemonMiningState daemonMiningState = DaemonMiningState::idle;
