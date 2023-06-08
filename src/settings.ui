@@ -141,12 +141,12 @@
         <widget class="QComboBox" name="comboBox_blockExplorer">
          <item>
           <property name="text">
-           <string>explore.wownero.com</string>
+           <string>muchwow.lol</string>
           </property>
          </item>
          <item>
           <property name="text">
-           <string>kryfi.com</string>
+           <string>explorer.suchwow.xyz</string>
           </property>
          </item>
         </widget>

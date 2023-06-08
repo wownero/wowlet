@@ -240,10 +240,10 @@ QString Utils::copyFromClipboard() {
 
 QString Utils::blockExplorerLink(const QString &txid) {
     auto explorer = config()->get(Config::blockExplorer).toString();
-    if(explorer.startsWith("kryfi.com")) {
-        return QString("https://kryfi.com/explorer/wownero/tx/%1").arg(txid);
+    if(explorer.startsWith("explorer.suchwow.xyz")) {
+        return QString("https://explorer.suchwow.xyz/tx/%1").arg(txid);
     } else {
-        return QString("https://explore.wownero.com/tx/%1").arg(txid);
+        return QString("https://muchwow.lol/tx?id=%1").arg(txid);
     }
 }
 
