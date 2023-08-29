@@ -56,15 +56,15 @@ QVariant ForumModel::data(const QModelIndex &index, int role) const
                 return post->title;
             case Author:
                 return post->author;
-            case Comments:
-                return QString::number(post->comments);
+            case DateAdded:
+                return post->date_added;
             default:
                 return QVariant();
         }
     }
     else if (role == Qt::TextAlignmentRole) {
         switch(index.column()) {
-            case Comments:
+            case DateAdded:
                 return Qt::AlignRight;
             default:
                 return QVariant();
@@ -85,8 +85,8 @@ QVariant ForumModel::headerData(int section, Qt::Orientation orientation, int ro
                 return QString("Forum Post");
             case Author:
                 return QString("Author");
-            case Comments:
-                return QString("Comments");
+            case DateAdded:
+                return QString("Date");
             default:
                 return QVariant();
         }

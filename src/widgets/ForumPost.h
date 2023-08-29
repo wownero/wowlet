@@ -7,13 +7,13 @@
 #include <QString>
 
 struct ForumPost {
-    ForumPost(const QString &title, const QString &author, const QString &permalink, int comments)
-            : title(title), author(author), permalink(permalink), comments(comments){};
+    ForumPost(const QString &title, const QString &author, const QString &permalink, const QString date_added)
+            : title(title), author(author), permalink(permalink), date_added(date_added){};
 
     QString title;
     QString author;
     QString permalink;
-    int comments;
+    QString date_added;
 };
 
 #endif //WOWLET_FORUMPOST_H

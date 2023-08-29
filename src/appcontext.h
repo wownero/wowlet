@@ -67,7 +67,7 @@ public:
     QString tmpTxDescription;
 
     // https://git.wownero.com/wowlet/wowlet-backend/
-    QString backendHost = "6wku2m4zrv6j666crlo7lzofv6ud6enzllyhou3ijeigpukymi37caad.onion";
+    QString backendHost = "l3hkasj5nnrh24yzj4acj5dgqlscq56o5xjvvqsftj55fkonqly5aiid.onion";
     unsigned int backendPort = 80;
     bool backendTLS = false;
     QString backendWSUrl;

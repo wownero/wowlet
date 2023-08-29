@@ -18,7 +18,7 @@ public:
     {
         Title = 0,
         Author,
-        Comments,
+        DateAdded,
         COUNT
     };
 

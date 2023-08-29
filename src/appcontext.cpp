@@ -554,10 +554,10 @@ void AppContext::onWSForum(const QJsonArray& forum_data) {
     for (auto &&entry: forum_data) {
         auto obj = entry.toObject();
         auto forumPost = new ForumPost(
-                obj.value("title").toString(),
-                obj.value("author").toString(),
+                obj.value("thread").toString(),
+                obj.value("member_name").toString(),
                 obj.value("permalink").toString(),
-                obj.value("comments").toInt());
+                obj.value("member_name").toString());
         QSharedPointer<ForumPost> r = QSharedPointer<ForumPost>(forumPost);
         l.append(r);
     }
