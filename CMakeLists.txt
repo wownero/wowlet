@@ -5,9 +5,9 @@ message(STATUS "Initiating compile using CMake ${CMAKE_VERSION}")
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(VERSION_MAJOR "4")
-set(VERSION_MINOR "0")
+set(VERSION_MINOR "1")
 set(VERSION_REVISION "0")
-set(VERSION "beta-7")
+set(VERSION "beta-8")
 
 option(FETCH_DEPS "Download dependencies if they are not found" ON)
 option(OPENVR "Include OpenVR support")
