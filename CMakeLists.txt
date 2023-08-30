@@ -30,11 +30,6 @@ set(BUILD_GUI_DEPS ON)
 set(BUILD_64 ON CACHE BOOL "Build 64-bit binaries")
 set(INSTALL_VENDORED_LIBUNBOUND ${STATIC})
 set(USE_SINGLE_BUILDDIR ON)
-if(UNIX AND NOT APPLE)
-    set(LINUX_ACTIVATION ON)
-else()
-    set(LINUX_ACTIVATION OFF)
-endif()
 
 # Are we in debug mode?
 set(_CMAKE_BUILD_TYPE "")
@@ -101,9 +96,6 @@ include_directories(${EASYLOGGING_INCLUDE})
 link_directories(${EASYLOGGING_LIBRARY_DIRS})
 
 # OpenSSL
-if(APPLE AND NOT OPENSSL_ROOT_DIR)
-    execute_process(COMMAND brew --prefix openssl OUTPUT_VARIABLE OPENSSL_ROOT_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
-endif()
 find_package(OpenSSL REQUIRED)
 message(STATUS "OpenSSL: Version ${OPENSSL_VERSION}")
 message(STATUS "OpenSSL: include dir at ${OPENSSL_INCLUDE_DIR}")
@@ -129,20 +121,15 @@ find_package(wownero-seed CONFIG REQUIRED)
 if(DEBUG)
     set(Boost_DEBUG ON)
 endif()
-if(APPLE AND NOT BOOST_ROOT)
-    execute_process(COMMAND brew --prefix boost OUTPUT_VARIABLE BOOST_ROOT OUTPUT_STRIP_TRAILING_WHITESPACE)
-endif()
+
 if(MINGW)
     set(Boost_THREADAPI win32)
 endif()
 set(_BOOST_COMPONENTS system filesystem thread date_time chrono regex serialization program_options locale)
-if(APPLE)
-    # atomic is only present/needed on Apple
-    list(APPEND _BOOST_COMPONENTS atomic)
-endif()
+
 find_package(Boost 1.58 REQUIRED COMPONENTS ${_BOOST_COMPONENTS})
 
-if(UNIX AND NOT APPLE AND NOT ANDROID)
+if(UNIX AND NOT ANDROID)
     if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
         # https://github.com/monero-project/monero-gui/issues/3142#issuecomment-705940446
         set(CMAKE_SKIP_RPATH ON)
@@ -184,38 +171,17 @@ if(TOR_BIN)
     # on the buildbot(s) Tor is baked into the image
     # - linux: See `Dockerfile`
     # - windows: See `Dockerfile.windows`
-    #
-    # ## MacOS:
-    # we assume the following files are already present in src/assets/exec:
-    # - tor
-    # - libevent-2.1.7.dylib
-    # so copy them beforehand and set TOR_BIN to something random.
+    if(NOT EXISTS "${TOR_BIN}")
+        message(FATAL_ERROR "TOR_BIN is set, but file does not exist: '${TOR_BIN}'")
+    endif()
 
-    # MacOS, check if required files are present
-    if(APPLE)
-        foreach(fn libevent-2.1.7.dylib tor)
-            set(tor_path "${CMAKE_CURRENT_SOURCE_DIR}/src/assets/exec/${fn}")
-            if (EXISTS "${tor_path}")
-                message(STATUS "Tor found: ${tor_path}")
-            else()
-                message(FATAL_ERROR "TOR_BIN is set, so the following file needs to be present: '${tor_path}'")
-            endif()
-            set(TOR_BIN "${tor_path}")
-        endforeach()
-    else()
-        if(NOT EXISTS "${TOR_BIN}")
-            message(FATAL_ERROR "TOR_BIN is set, but file does not exist: '${TOR_BIN}'")
-        endif()
+    # copy the Tor executable over
+    set(TOR_COPY_CMD "cp ${TOR_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/exec/tor")
+    message(STATUS "Tor cmd: ${TOR_COPY_CMD}")
 
-        # copy the Tor executable over
-        set(TOR_COPY_CMD "cp ${TOR_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/exec/tor")
-        message(STATUS "Tor cmd: ${TOR_COPY_CMD}")
-
-        execute_process(COMMAND bash -c "${TOR_COPY_CMD}" RESULT_VARIABLE ret)
-        if(ret EQUAL "1")
-            message(FATAL_ERROR "Tor copy failure: ${TOR_COPY_CMD}")
-        endif()
-
+    execute_process(COMMAND bash -c "${TOR_COPY_CMD}" RESULT_VARIABLE ret)
+    if(ret EQUAL "1")
+        message(FATAL_ERROR "Tor copy failure: ${TOR_COPY_CMD}")
     endif()
 
     # get Tor version while we're at it
@@ -260,8 +226,6 @@ if(MINGW)
     else()
         set(ICU_LIBRARIES icuio icuin icuuc icudt icutu iconv)
     endif()
-elseif(APPLE)
-    set(EXTRA_LIBRARIES "-framework AppKit")
 elseif(OPENBSD)
     set(EXTRA_LIBRARIES "")
 elseif(FREEBSD)
@@ -277,14 +241,6 @@ elseif(NOT MSVC AND NOT DEPENDS AND NOT ANDROID)
 endif()
 
 list(APPEND EXTRA_LIBRARIES ${CMAKE_DL_LIBS})
-
-if(APPLE)
-    include_directories(SYSTEM /usr/include/malloc)
-    if(POLICY CMP0042)
-        cmake_policy(SET CMP0042 NEW)
-    endif()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=default -std=c++11 -DGTEST_HAS_TR1_TUPLE=0")
-endif()
 
 # warnings
 # @TODO: enable these 2 for migration to Qt 6
@@ -320,12 +276,7 @@ if (NOT (CMAKE_C_COMPILER_ID STREQUAL "GNU" AND NOT CMAKE_C_COMPILER_VERSION VER
 endif()
 
 # linker
-if (APPLE)
-    add_linker_flag_if_supported(-Wl,-bind_at_load LD_SECURITY_FLAGS)
-    add_linker_flag_if_supported(-Wl,-dead_strip LD_SECURITY_FLAGS)
-    add_linker_flag_if_supported(-Wl,-dead_strip_dylibs LD_SECURITY_FLAGS)
-endif()
-if (NOT APPLE AND NOT (WIN32 AND CMAKE_C_COMPILER_ID STREQUAL "GNU"))
+if (NOT (WIN32 AND CMAKE_C_COMPILER_ID STREQUAL "GNU"))
     # Windows binaries die on startup with PIE when compiled with GCC
     add_linker_flag_if_supported(-pie LD_SECURITY_FLAGS)
 endif()
@@ -375,10 +326,6 @@ message(STATUS "Using linker security hardening flags: ${LD_SECURITY_FLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 ${C_SECURITY_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ${CXX_SECURITY_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LD_SECURITY_FLAGS} ${STATIC_FLAGS}")
-
-if(APPLE)
-    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/contrib/KDMacTouchBar")
-endif()
 
 if(OPENVR)
     # Add contrib/openvr as library

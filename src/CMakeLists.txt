@@ -70,11 +70,7 @@ endif()
 qt5_add_resources(RESOURCES assets.qrc)
 
 if(TOR_BIN)
-    if(APPLE)
-        set(ASSETS_TOR "assets_tor_macos.qrc")
-    else()
-        set(ASSETS_TOR "assets_tor.qrc")
-    endif()
+    set(ASSETS_TOR "assets_tor.qrc")
 endif()
 
 set(EXECUTABLE_FLAG)
@@ -222,12 +218,10 @@ target_compile_definitions(wowlet
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 
-if(UNIX AND NOT APPLE)
+if(UNIX)
     # https://stackoverflow.com/questions/57766620/cmake-add-library-doesnt-initialize-static-global-variable
     # so that contrib/monero-seed/src/gf_elem.cpp properly initializes. A better solution is welcome.
     target_link_libraries(wowlet PUBLIC -Wl,--whole-archive wownero-seed::wownero-seed -Wl,--no-whole-archive)
-else()
-    target_link_libraries(wowlet PUBLIC wownero-seed::wownero-seed)
 endif()
 
 if(ANDROID)
@@ -332,26 +326,16 @@ if(OPENVR)
     endif()
 endif()
 
-if(APPLE)
-    target_link_libraries(wowlet PUBLIC
-            KDMacTouchBar
-            )
-    target_include_directories(wowlet
-            PUBLIC ../contrib/KDMacTouchBar)
-endif()
-
-if(NOT APPLE)
-    target_link_libraries(wowlet PUBLIC
-            Qt5::QSvgIconPlugin
-            Qt5::QSvgPlugin
-    )
-endif()
+target_link_libraries(wowlet PUBLIC
+        Qt5::QSvgIconPlugin
+        Qt5::QSvgPlugin
+)
 
 if(STATIC)
     target_link_libraries(wowlet PUBLIC
             Qt5::QSvgIconPlugin
             Qt5::QSvgPlugin)
-    if(UNIX AND NOT APPLE)
+    if(UNIX)
 	    target_link_libraries(wowlet PUBLIC
             	Qt5::QXcbIntegrationPlugin)
     endif()
@@ -359,10 +343,6 @@ endif()
 
 if(X11_FOUND)
     target_link_libraries(wowlet PUBLIC ${X11_LIBRARIES})
-endif()
-
-if(APPLE)
-    include(Deploy)
 endif()
 
 install(TARGETS wowlet

@@ -33,13 +33,6 @@ libzmq3-dev libsodium-dev libhidapi-dev libnorm-dev libusb-1.0-0-dev libpgm-dev 
 libprotobuf-dev protobuf-compiler libgcrypt20-dev libpng-dev
 ```
 
-## Mac OS
-
-```bash
-brew install boost zmq openssl libpgm miniupnpc libsodium expat libunwind-headers \
-protobuf libgcrypt qrencode ccache cmake pkgconfig git
-```
-
 ## CMake
 
 After installing Qt you might have a folder called `/home/$USER/Qt/`. You need to pass this to CMake 
@@ -85,13 +78,6 @@ prevents the child process from starting up each time you launch WOWlet and thus
 ```bash
 apt install -y tor
 sudo service tor start
-```
-
-#### Mac OS
-
-```bash
-brew install tor
-brew services start tor
 ```
 
 To skip the wizards and open a wallet directly use `--wallet-file`: 
