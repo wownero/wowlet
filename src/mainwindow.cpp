@@ -28,7 +28,6 @@
 #include "globals.h"
 #include "config-wowlet.h"
 #include "utils/ColorScheme.h"
-#include "utils/activate_linux.h"
 
 // libwalletqt
 #include "libwalletqt/AddressBook.h"
@@ -359,13 +358,6 @@ MainWindow::MainWindow(AppContext *ctx, QWidget *parent) :
     m_touchbarActionWelcome = new QAction(QIcon(":/assets/images/wowlet.png"), "Welcome to WOWlet!");
     m_touchbarWalletItems = {ui->actionSettings, ui->actionCalculator, ui->actionKeys, ui->actionDonate_to_Wowlet};
     m_touchbarWizardItems = {m_touchbarActionWelcome};
-#endif
-
-#ifdef LINUX_ACTIVATION
-    // Linux activation kek
-    auto activatedSerial = config()->get(Config::LinuxActivated).toString();
-    if(activatedSerial.isEmpty())
-        LinuxActivator::start();
 #endif
 
     // setup some UI
