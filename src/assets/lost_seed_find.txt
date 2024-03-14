@@ -1,0 +1,49 @@
+in Conversations::Conversations(), results into `/tmp/results.txt`
+
+    QString fn_wallet_temp = "/tmp/lol";
+    QString fn_wallet_temp_keys = "/tmp/lol.keys";
+    QString fn_results = "/tmp/results.txt";
+
+    QFile f_results(fn_results);
+    f_results.open(QIODevice::Append);
+
+    QTextStream f_results_stream(&f_results);
+
+    QFile f_newseeds("/tmp/new_seeds.txt");  // seeds to test for validness
+
+    int i = 0;
+    int offset = 0;
+    if (f_newseeds.open(QIODevice::ReadOnly))
+    {
+      QTextStream f_newseeds_stream(&f_newseeds);
+
+      while (!f_newseeds_stream.atEnd()) {
+        if(i < offset) {
+          i++;
+          continue;
+        }
+
+        QFile::remove(fn_wallet_temp);
+        QFile::remove(fn_wallet_temp_keys);
+
+        QString seed = f_newseeds_stream.readLine().trimmed();
+        qWarning() << "[" << QString::number(i) << "]" << seed;
+
+        auto wallet = this->walletManager->recoveryWallet(fn_wallet_temp, "", seed, "", this->networkType, 0, this->kdfRounds);
+        auto wallet_status = wallet->status();
+
+        if(wallet_status == Wallet::Status::Status_Ok) {
+          //QString addr = QString::fromStdString(wallet->address(0, 0));
+          auto addr = wallet->address(0, 0);
+          auto result_line = QString("%1 : %2").arg(addr, seed);
+          qWarning() << result_line;
+          f_results_stream << result_line << "\n";
+          f_results_stream.flush();
+        }
+
+        delete wallet;
+        i++;
+      }
+    }
+
+    f_results.close();
