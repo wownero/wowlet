@@ -6,4 +6,4 @@
 	url = https://github.com/dlbeer/quirc.git
 [submodule "wownero"]
 	path = wownero
-	url = https://codeberg.org/wownero/wownero
+	url = https://codeberg.org/wownero/wownero.git
