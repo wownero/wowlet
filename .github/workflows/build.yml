@@ -16,7 +16,7 @@ jobs:
       - name: update apt
         run: apt update
       - name: install dependencies
-        run: apt -y install git cmake build-essential ccache libssl-dev libunbound-dev libboost-all-dev
+        run: apt -y install git cmake build-essential ccache libssl-dev libunbound-dev libboost-all-dev libzmq3-dev
                             libqrencode-dev qt6-base-dev qt6-svg-dev qt6-websockets-dev qt6-multimedia-dev
                             qt6-wayland-dev libzip-dev libsodium-dev libgcrypt20-dev libx11-xcb-dev
                             protobuf-compiler libprotobuf-dev libhidapi-dev libzxing-dev libusb-dev
