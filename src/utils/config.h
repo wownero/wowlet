@@ -72,6 +72,10 @@ public:
         balanceShowFiat,
         preferredFiatCurrency,
 
+        // Embedded node (wowlet)
+        runLocalNode,
+        pruneBlockchain,
+
         // Network -> Proxy
         proxy,
         socks5Host,

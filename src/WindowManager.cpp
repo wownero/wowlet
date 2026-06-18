@@ -22,6 +22,7 @@
 #include "utils/os/tails.h"
 #include "utils/os/whonix.h"
 #include "utils/TorManager.h"
+#include "utils/DaemonManager.h"
 #include "utils/WebsocketNotifier.h"
 #include "utils/AppData.h"
 
@@ -46,6 +47,11 @@ WindowManager::WindowManager(QObject *parent)
     m_tray->setToolTip("Feather Wallet");
     this->buildTrayMenu();
     m_tray->setVisible(conf()->get(Config::showTrayIcon).toBool());
+
+    // wowlet: boot the embedded wownerod node early so it syncs while the user opens their wallet.
+    // No-op if the user disabled the local node (Config::runLocalNode) or no daemon is bundled.
+    daemonManager()->init();
+    daemonManager()->start();
 
     this->initSkins();
     this->patchMacStylesheet();
@@ -107,6 +113,7 @@ void WindowManager::close() {
     }
 
     torManager()->stop();
+    daemonManager()->stop();   // wowlet: gracefully shut down the embedded wownerod (flush LMDB)
 
     deleteLater();
 
