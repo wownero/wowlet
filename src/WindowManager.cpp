@@ -58,9 +58,8 @@ WindowManager::WindowManager(QObject *parent)
 
     this->showCrashLogs();
 
-    if (!conf()->get(Config::firstRun).toBool() || TailsOS::detect() || WhonixOS::detect()) {
-        this->onInitialNetworkConfigured();
-    }
+    // wowlet: the embedded local node is configured automatically — skip the first-run network wizard.
+    this->onInitialNetworkConfigured();
 
     this->startupWarning();
 
@@ -727,12 +726,9 @@ WalletWizard* WindowManager::createWizard(WalletWizard::Page startPage) {
 }
 
 void WindowManager::initWizard() {
-    auto startPage = WalletWizard::Page_Menu;
-    if (conf()->get(Config::firstRun).toBool() && !(TailsOS::detect() || WhonixOS::detect())) {
-        startPage = WalletWizard::Page_Network;
-    }
-
-    this->showWizard(startPage);
+    // wowlet: go straight to wallet creation — wowlet runs its own node by default, so the first-run
+    // node-picker + third-party-data screens are skipped. Node/remote options live in Settings.
+    this->showWizard(WalletWizard::Page_Menu);
 }
 
 void WindowManager::showWizard(WalletWizard::Page startPage) {

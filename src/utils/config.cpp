@@ -78,7 +78,7 @@ static const QHash<Config::ConfigKey, ConfigDirective> configStrings = {
         {Config::lockOnMinimize, {QS("lockOnMinimize"), false}},
         {Config::showTrayIcon, {QS("showTrayIcon"), true}},
         {Config::minimizeToTray, {QS("minimizeToTray"), false}},
-        {Config::disableWebsocket, {QS("disableWebsocket"), false}},
+        {Config::disableWebsocket, {QS("disableWebsocket"), true}},   // wowlet: no Feather-server phone-home (prices via neroswap, node is local)
         {Config::offlineMode, {QS("offlineMode"), false}},
 
         // Transactions

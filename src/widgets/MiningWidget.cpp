@@ -7,6 +7,7 @@
 
 #include <QVBoxLayout>
 #include <QQmlContext>
+#include <QQuickItem>
 #include <QThread>
 
 MiningWidget::MiningWidget(Wallet *wallet, QWidget *parent)
