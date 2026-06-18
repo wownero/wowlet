@@ -1,75 +1,42 @@
 {
   "mainnet": {
     "tor": [
-      "loveanvthlsepingenr7opdqy6nlhn5jidwvzzxfmwsw2rry5mn2gfqd.onion:18089",
-      "dtrnd4in2igrtfx2c45ghf2drns3doddmcsfy6b5gjw5iinukd33slqd.onion:18081",
-      "3vjfahy3dk4znsicambgluiaa5whqb364skmsq5os7bnxjhbavbawqad.onion:18089",
-      "ip4zpbps7unk6xhlanqtw24f75akfbl3upeckfjqjks7ftfnk4i73oid.onion:18081",
-      "cakexmrl7bonq7ovjka5kuwuyd3f7qnkz6z6s6dmsy3uckwra7bvggyd.onion:18081",
-      "qz43zul2x56jexzoqgkx2trzwcfnr6l3hbtfcfx54g4r3eahy3bssjyd.onion:18089",
-      "plowsof3t5hogddwabaeiyrno25efmzfxyro2vligremt7sxpsclfaid.onion:18089",
-      "plowsoffjexmxalw73tkjmf422gq6575fc7vicuu4javzn2ynnte6tyd.onion:18089",
-      "plowsofe6cleftfmk2raiw5h2x66atrik3nja4bfd3zrfa2hdlgworad.onion:18089",
-      "ravfxmrqgd4j2o2gdc2yaij2wcmkcflu2rdnzhng5htk5hgnh6gmyeid.onion:18081",
-      "ravfxmrzi3eet62s4nkuu5sgpq6otgtffluk3ylb2kuvimtb34sonryd.onion:18089",
-      "rucknium757bokwv3ss35ftgc3gzb7hgbvvglbg3hisp7tsj2fkd2nyd.onion:18081",
-      "mhfsxznn5pi4xuxohj5k7unqp73sa6d44mbeewbpxnm25z3wzfogcfyd.onion:18081",
-      "7inib34hqn2ocmlaaxjshdavbdn5w5rfdff735lbz33765j2pz3tn4ad.onion:18081",
-      "sfprpc2fws6ltnq4hyr7lvpul3nank5layd7q7tyc5h4gy4h77gtabad.onion:18089",
-      "a6orjo6aiotog3njppja5jwnd3rexzfjiejxnojvw74p3kma45fundid.onion:18089",
-      "trocadorh642rks54sxufwy4kys23mrsgof3axowyro5ljb2dkgdlmad.onion:18089",
-      "moneroxmrxw44lku6qniyarpwgznpcwml4drq7vb24ppatlcg4kmxpqd.onion:18089"
-    ],
-    "i2p": [
-      "ofrnxmr5ltaazarexs3damrcsldc5p6qlcos3vk25cwdgyjvrueq.b32.i2p:18089",
-      "vdmnehdjkpkg57nthgnjfuaqgku673r5bpbqg56ix6fyqoywgqrq.b32.i2p:18089",
-      "uqj3aphckqtjsitz7kxx5flqpwjlq5ppr3chazfued7xucv3nheq.b32.i2p:18089",
-      "ugnlcdciyhghh2zert7c3kl4biwkirc43ke33jiy5slnd3mv2trq.b32.i2p:18089",
-      "ravfxmrg42nts5q65c33gyvs4gpb5n3a3wzzx3w2bes2hbkakfsa.b32.i2p:18081",
-      "ravfxmresnvpybolnczn7wsju55c6jej3vo5hrnvcypugrdy4u6q.b32.i2p:18089",
-      "5dmhmmaff5mqkgmz4haq5w2wrgobhelrat7lvbt27okojkzbx6hq.b32.i2p:18089"
+      "v2admi6gbeprxnk6i2oscizhgy4v5ixu6iezkhj5udiwbfjjs2w7dnid.onion:34568",
+      "awbibkoaa67jhuaqes4n2243gd6vtidjzqj2djukrubp2eudrmxr5mid.onion:34568",
+      "7ftpbpp6rbgqi5kjmhyin46essnh3eqb3m3rhfi7r2fr33iwkeuer3yd.onion:34568",
+      "j7rf2jcccizcp47y5moehguyuqdpg4lusk642sw4nayuruitqaqbc7ad.onion:34568",
+      "aje53o5z5twne5q2ljw44zkahhsuhjtwaxuburxddbf7n4pfsj4rj6qd.onion:34568",
+      "nepc4lxndsooj2akn7ofrj3ooqc25242obchcag6tw3f2mxrms2uuvyd.onion:34568",
+      "666l2ajxqjgj5lskvbokvworjysgvqag4oitokjuy7wz6juisul4jqad.onion:34568",
+      "ty7ppqozzodz75audgvkprekiiqsovbyrkfdjwadrkbe3etyzloatxad.onion:34568",
+      "ewynwpnprbgqllv2syn3drjdrqkw7ehoeg73znelm6mevvmpddexsoqd.onion:34568",
+      "mqkiqwmhhpqtzlrf26stv7jvtaudbyzkbg3lttkmvvvauzgtxm62tgyd.onion:34568",
+      "zao3w6isidntdbnyee5ufs7fyzmv7wzchpw32i3uo5eldjwmo4bxg2qd.onion:34568"
     ],
     "clearnet": [
-      "node3-us.monero.love:18081",
-      "node2-eu.monero.love:18089",
-      "xmr-node.cakewallet.com:18081",
-      "singapore.node.xmr.pm:18089",
-      "node.monerodevs.org:18089",
-      "node2.monerodevs.org:18089",
-      "node3.monerodevs.org:18089",
-      "ravfx.its-a-node.org:18081",
-      "ravfx2.its-a-node.org:18089",
-      "rucknium.me:18081",
-      "selsta1.featherwallet.net:18081",
-      "selsta2.featherwallet.net:18081",
-      "node.sethforprivacy.com:18089",
-      "xmr.stormycloud.org:18089",
-      "node.trocador.app:18089",
-      "node.xmr.ru:18081"
-    ]
-  },
-  "testnet": {
-    "tor": [
-      "plowsof3t5hogddwabaeiyrno25efmzfxyro2vligremt7sxpsclfaid.onion:28089",
-      "plowsoffjexmxalw73tkjmf422gq6575fc7vicuu4javzn2ynnte6tyd.onion:28089"
-    ],
-    "clearnet": [
-      "singapore.node.xmr.pm:28081",
-      "node2.sethforprivacy.com:28089",
-      "node.sethforprivacy.com:28089"
+      "global.wownodes.com:34568",
+      "super.fast.node.xmr.pm:34568",
+      "node.wownero.club:34568",
+      "node.suchwow.xyz:34568",
+      "eu-west-1.wow.xmr.pm:34568",
+      "eu-west-2.wow.xmr.pm:34568",
+      "eu-west-3.wow.xmr.pm:34568",
+      "eu-west-4.wow.xmr.pm:34568",
+      "eu-west-5.wow.xmr.pm:34568",
+      "eu-west-6.wow.xmr.pm:34568",
+      "na-west-1.wow.xmr.pm:34568",
+      "much.wow.such.money:34568",
+      "very.wow.such.money:34568",
+      "169.119.33.174:34568",
+      "wow.bot.tips:34568",
+      "idontwanttogototoronto.wow.fail:34568"
     ]
   },
   "stagenet": {
-    "tor": [
-      "ct36dsbe3oubpbebpxmiqz4uqk6zb6nhmkhoekileo4fts23rvuse2qd.onion:38081",
-      "plowsof3t5hogddwabaeiyrno25efmzfxyro2vligremt7sxpsclfaid.onion:38089",
-      "plowsoffjexmxalw73tkjmf422gq6575fc7vicuu4javzn2ynnte6tyd.onion:38089"
-    ],
+    "tor": [],
     "clearnet": [
-      "xmr-lux.boldsuck.org:38081",
-      "singapore.node.xmr.pm:38081",
-      "node.sethforprivacy.com:38089",
-      "node2.sethforprivacy.com:38089"
+      "run.your.own.node.xmr.pm:38089",
+      "super.fast.node.xmr.pm:38089"
     ]
   }
 }
