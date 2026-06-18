@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=wowlet
+GenericName=Wownero Wallet
+Comment=A free Wownero desktop wallet with an embedded node
+Icon=wowlet
+Exec=wowlet
+Terminal=false
+Categories=Network;
+StartupNotify=false
+StartupWMClass=wowlet
+Keywords=crypto;currency;WOW;wownero;dank;meme

@@ -41,13 +41,29 @@ jobs:
           cd build
           cmake -DWITH_SCANNER=OFF -DWOWNEROD_DIR=/tmp/wownerod-embed ..
           cmake --build . -j $(nproc)
-      - name: package wowlet
+      - name: package AppImage
         run: |
-          mkdir -p dist
-          cp build/bin/feather dist/wowlet
-      - name: upload wowlet artifact
+          mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps
+          cp build/bin/feather AppDir/usr/bin/wowlet
+          chmod +x AppDir/usr/bin/wowlet
+          cp src/assets/wowlet.desktop AppDir/usr/share/applications/wowlet.desktop
+          cp src/assets/images/appicons/256x256.png AppDir/usr/share/icons/hicolor/256x256/apps/wowlet.png
+          curl -sL -o linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          curl -sL -o linuxdeploy-plugin-qt https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy linuxdeploy-plugin-qt
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          export QMAKE="$(command -v qmake6 || echo /usr/bin/qmake6)"
+          export EXTRA_QT_PLUGINS="svg;multimedia"
+          export PATH="$PWD:$PATH"
+          ./linuxdeploy --appdir AppDir --plugin qt \
+            -d AppDir/usr/share/applications/wowlet.desktop \
+            -i AppDir/usr/share/icons/hicolor/256x256/apps/wowlet.png \
+            --output appimage
+          mv *.AppImage wowlet-x86_64.AppImage 2>/dev/null || true
+          ls -la wowlet-x86_64.AppImage
+      - name: upload wowlet AppImage
         uses: actions/upload-artifact@v4
         with:
-          name: wowlet-x86_64-linux
-          path: dist/wowlet
+          name: wowlet-x86_64-linux-AppImage
+          path: wowlet-x86_64.AppImage
           if-no-files-found: error
