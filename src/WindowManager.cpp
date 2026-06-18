@@ -761,6 +761,10 @@ void WindowManager::initSkins() {
     if (!breeze_light.isEmpty())
         m_skins.insert("Breeze/Light", breeze_light);
 
+    QString wownero = this->loadStylesheet(":/wow.qss");
+    if (!wownero.isEmpty())
+        m_skins.insert("Wownero", wownero);
+
     QString skin = conf()->get(Config::skin).toString();
     qApp->setStyleSheet(m_skins[skin]);
 }

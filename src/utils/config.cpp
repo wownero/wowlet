@@ -64,7 +64,7 @@ static const QHash<Config::ConfigKey, ConfigDirective> configStrings = {
         // Settings
         {Config::lastSettingsPage, {QS("lastSettingsPage"), 0}},
         {Config::preferredFiatCurrency,{QS("preferredFiatCurrency"), "USD"}},
-        {Config::skin,{QS("skin"), "light"}},
+        {Config::skin,{QS("skin"), "Wownero"}},
         {Config::amountPrecision, {QS("amountPrecision"), 12}},
         {Config::dateFormat, {QS("dateFormat"), "yyyy-MM-dd"}},
         {Config::timeFormat, {QS("timeFormat"), "HH:mm"}},
