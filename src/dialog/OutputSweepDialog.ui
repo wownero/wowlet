@@ -130,7 +130,7 @@
       <bool>false</bool>
      </property>
      <property name="text">
-      <string>1.000000000000 XMR ≈ 5x 0.200000000000 XMR</string>
+      <string>1.000000000000 WOW ≈ 5x 0.200000000000 WOW</string>
      </property>
      <property name="textInteractionFlags">
       <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>

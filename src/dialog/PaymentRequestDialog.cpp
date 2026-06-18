@@ -89,7 +89,7 @@ void PaymentRequestDialog::calculateCrypto() {
     QString fiatCurrency = ui->comboCurrency->currentText();
     QString fiatAmount = ui->line_amountFiat->text();
 
-    double cryptoAmount = appData()->prices.convert(fiatCurrency, "XMR", fiatAmount.toDouble());
+    double cryptoAmount = appData()->prices.convert(fiatCurrency, "WOW", fiatAmount.toDouble());
     ui->line_amount->setText(QString::number(cryptoAmount, 'f', 10));
 }
 
@@ -97,7 +97,7 @@ void PaymentRequestDialog::calculateFiat() {
     QString fiatCurrency = ui->comboCurrency->currentText();
     QString cryptoAmount = ui->line_amount->text();
 
-    double fiatAmount = appData()->prices.convert("XMR", fiatCurrency, cryptoAmount.toDouble());
+    double fiatAmount = appData()->prices.convert("WOW", fiatCurrency, cryptoAmount.toDouble());
     ui->line_amountFiat->setText(QString::number(fiatAmount, 'f', 2));
 }
 

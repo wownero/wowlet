@@ -180,7 +180,7 @@ QString defaultWalletDir() {
             if (appImagePath.isEmpty()) {
                 qDebug() << "Not an appimage, using currentPath()";
                 if (QDir(QDir::currentPath() + "/.feather").exists()) {
-                    return QDir::currentPath() + "/.feather/Monero/wallets";
+                    return QDir::currentPath() + "/.feather/Wownero/wallets";
                 }
                 return QDir::currentPath() + "/feather_data/wallets";
             }
@@ -188,7 +188,7 @@ QString defaultWalletDir() {
             QFileInfo appImageDir(appImagePath);
             QString absolutePath = appImageDir.absoluteDir().path();
             if (QDir(absolutePath + "/.feather").exists()) {
-                return absolutePath + "/.feather/Monero/wallets";
+                return absolutePath + "/.feather/Wownero/wallets";
             }
             return absolutePath + "/feather_data/wallets";
         }();
@@ -202,9 +202,9 @@ QString defaultWalletDir() {
     }
 
 #if defined(Q_OS_LINUX) or defined(Q_OS_MAC)
-    return QString("%1/Monero/wallets").arg(QDir::homePath());
+    return QString("%1/Wownero/wallets").arg(QDir::homePath());
 #elif defined(Q_OS_WIN)
-    return QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/Monero/wallets";
+    return QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/Wownero/wallets";
 #endif
 }
 

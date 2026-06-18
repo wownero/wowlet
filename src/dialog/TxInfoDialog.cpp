@@ -147,7 +147,7 @@ void TxInfoDialog::setData(const TransactionRow &tx) {
     }
 
     QString direction = tx.direction == TransactionRow::Direction_In ? "received" : "sent";
-    ui->label_amount->setText(QString("Amount %1: %2 XMR").arg(direction, tx.displayAmount()));
+    ui->label_amount->setText(QString("Amount %1: %2 WOW").arg(direction, tx.displayAmount()));
 
     QString fee;
     if (tx.coinbase)
@@ -157,7 +157,7 @@ void TxInfoDialog::setData(const TransactionRow &tx) {
     else if (tx.displayFee().isEmpty())
         fee = "N/A";
     else
-        fee = QString("%1 XMR").arg(tx.displayFee());
+        fee = QString("%1 WOW").arg(tx.displayFee());
 
     ui->label_fee->setText(QString("Fee: %1").arg(fee));
 

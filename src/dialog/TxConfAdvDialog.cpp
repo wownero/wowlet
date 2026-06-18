@@ -108,7 +108,7 @@ void TxConfAdvDialog::setAmounts(quint64 amount, quint64 fee) {
     QString preferredCur = conf()->get(Config::preferredFiatCurrency).toString();
 
     auto convert = [preferredCur](double amount){
-        return QString::number(appData()->prices.convert("XMR", preferredCur, amount), 'f', 2);
+        return QString::number(appData()->prices.convert("WOW", preferredCur, amount), 'f', 2);
     };
 
     QString amount_str = WalletManager::displayAmount(amount);

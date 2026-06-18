@@ -33,7 +33,7 @@ AppData::AppData(QObject *parent)
     connect(websocketNotifier(), &WebsocketNotifier::TxFiatHistoryReceived, this->txFiatHistory, &TxFiatHistory::onWSData);
     connect(websocketNotifier(), &WebsocketNotifier::BlockHeightsReceived, this, &AppData::onBlockHeightsReceived);
 
-    // wownero: poll WOW (+ BTC/XMR/etc.) USD prices from neroswap every 2 minutes.
+    // wownero: poll WOW (+ BTC/WOW/etc.) USD prices from neroswap every 2 minutes.
     m_network = new Networking(this);
     auto fetchNeroswapPrices = [this] {
         QNetworkReply *reply = m_network->getJson(this, "https://prices.neroswap.com/v1/prices");

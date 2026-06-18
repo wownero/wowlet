@@ -661,7 +661,7 @@ bool Wallet::keyImageSyncNeeded(quint64 amount, bool sendAll) const {
         return this->hasUnknownKeyImages();
     }
 
-    // 0.001 XMR to account for tx fee
+    // 0.001 WOW to account for tx fee
     return ((amount + WalletManager::amountFromDouble(0.001)) > this->viewOnlyBalance(this->currentSubaddressAccount()));
 }
 

@@ -100,7 +100,7 @@ void TxProofDialog::selectOutProof() {
 
     this->selectTxProof();
     ui->combo_address->addItems(m_OutDestinations);
-    ui->label_summary->setText("This proof shows you paid x XMR to the address selected above.");
+    ui->label_summary->setText("This proof shows you paid x WOW to the address selected above.");
 }
 
 void TxProofDialog::selectInProof() {
@@ -119,7 +119,7 @@ void TxProofDialog::selectInProof() {
 
     this->selectTxProof();
     ui->combo_address->addItems(m_InDestinations);
-    ui->label_summary->setText("This proof shows you received x XMR to the address selected above.");
+    ui->label_summary->setText("This proof shows you received x WOW to the address selected above.");
 }
 
 void TxProofDialog::selectTxProof() {

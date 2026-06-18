@@ -280,7 +280,7 @@
       <item>
        <widget class="QLabel" name="label_summary">
         <property name="text">
-         <string>This proof shows I paid x XMR to ADDR.</string>
+         <string>This proof shows I paid x WOW to ADDR.</string>
         </property>
        </widget>
       </item>

@@ -112,7 +112,7 @@ static const QHash<Config::ConfigKey, ConfigDirective> configStrings = {
         {Config::cameraExposureTime, {QS("cameraExposureTime"), 10}},
 
         {Config::fiatSymbols, {QS("fiatSymbols"), QStringList{"USD", "EUR", "GBP", "CAD", "AUD", "RUB"}}},
-        {Config::cryptoSymbols, {QS("cryptoSymbols"), QStringList{"BTC", "ETH", "LTC", "XMR", "ZEC"}}},
+        {Config::cryptoSymbols, {QS("cryptoSymbols"), QStringList{"BTC", "ETH", "LTC", "WOW", "ZEC"}}},
 
         // Tor
         {Config::proxy, {QS("proxy"), Config::Proxy::Tor}},
@@ -129,7 +129,7 @@ static const QHash<Config::ConfigKey, ConfigDirective> configStrings = {
         {Config::enabledPlugins, {QS("enabledPlugins"), QStringList{"tickers", "crowdfunding", "revuo", "calc"}}},
         {Config::restartRequired, {QS("restartRequired"), false}},
 
-        {Config::tickers, {QS("tickers"), QStringList{"XMR", "BTC", "XMR/BTC"}}},
+        {Config::tickers, {QS("tickers"), QStringList{"WOW", "BTC", "WOW/BTC"}}},
         {Config::tickersShowFiatBalance, {QS("tickersShowFiatBalance"), true}},
 };
 

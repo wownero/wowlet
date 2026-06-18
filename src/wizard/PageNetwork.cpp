@@ -40,7 +40,7 @@ PageNetwork::PageNetwork(QWidget *parent)
         bool nodeFound = res.first;
         if (nodeFound) {
             ui->frame_nodeDetected->show();
-            ui->label_nodeDetected->setText(QString("Feather detected a local node on %1").arg(res.second));
+            ui->label_nodeDetected->setText(QString("wowlet detected a local node on %1").arg(res.second));
 
             ui->btnGroup_network->button(Button::CUSTOM)->click();
             ui->line_customNode->setText(res.second);

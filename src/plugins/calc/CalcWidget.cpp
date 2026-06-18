@@ -125,7 +125,7 @@ void CalcWidget::initComboBox() {
     this->setupComboBox(ui->comboCalcFrom, filteredCryptoKeys, filteredFiatKeys);
     this->setupComboBox(ui->comboCalcTo,   filteredCryptoKeys, filteredFiatKeys);
 
-    ui->comboCalcFrom->setCurrentIndex(ui->comboCalcFrom->findText("XMR"));
+    ui->comboCalcFrom->setCurrentIndex(ui->comboCalcFrom->findText("WOW"));
 
     if (!preferredFiat.isEmpty()) {
         ui->comboCalcTo->setCurrentIndex(ui->comboCalcTo->findText(preferredFiat));

@@ -35,7 +35,7 @@ void Prices::cryptoPricesReceived(const QJsonArray &data) {
 }
 
 void Prices::neroswapPricesReceived(const QJsonObject &data) {
-    // neroswap returns {"rates": {"WOW": usd, "XMR": usd, ...}}. It is wowlet's sole crypto-price
+    // neroswap returns {"rates": {"WOW": usd, "WOW": usd, ...}}. It is wowlet's sole crypto-price
     // source (feather's websocket server does not carry WOW), so repopulate markets from it.
     QJsonObject ratesData = data.value("rates").toObject();
     if (ratesData.isEmpty())

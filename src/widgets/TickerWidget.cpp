@@ -73,7 +73,7 @@ BalanceTickerWidget::BalanceTickerWidget(QWidget *parent, Wallet *wallet, bool t
 void BalanceTickerWidget::updateDisplay() {
     double balance = (m_totalBalance ? m_wallet->balanceAll() : m_wallet->balance()) / constants::cdiv;
     QString fiatCurrency = conf()->get(Config::preferredFiatCurrency).toString();
-    double balanceFiatAmount = appData()->prices.convert("XMR", fiatCurrency, balance);
+    double balanceFiatAmount = appData()->prices.convert("WOW", fiatCurrency, balance);
     if (balanceFiatAmount < 0)
         return;
     this->setFiatText(balanceFiatAmount, fiatCurrency);

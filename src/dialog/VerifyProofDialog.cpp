@@ -113,7 +113,7 @@ void VerifyProofDialog::checkTxKey() {
         return;
     }
 
-    this->proofStatus(true, QString("Proof is valid.\n\nThis address received %1 XMR, with %2 confirmations").arg(res.amount, QString::number(res.confirmations)));
+    this->proofStatus(true, QString("Proof is valid.\n\nThis address received %1 WOW, with %2 confirmations").arg(res.amount, QString::number(res.confirmations)));
 }
 
 void VerifyProofDialog::checkFormattedProof() {
@@ -199,7 +199,7 @@ void VerifyProofDialog::onTxProofVerified(TxProofResult r) {
         return;
     }
 
-    this->proofStatus(true, QString("Proof is valid.\n\nThis address received %1 XMR, with %2 confirmation(s)").arg(WalletManager::displayAmount(r.received), QString::number(r.confirmations)));
+    this->proofStatus(true, QString("Proof is valid.\n\nThis address received %1 WOW, with %2 confirmation(s)").arg(WalletManager::displayAmount(r.received), QString::number(r.confirmations)));
 }
 
 void VerifyProofDialog::onSpendProofVerified(QPair<bool, bool> r) {

@@ -69,7 +69,7 @@ void TxPoolViewerDialog::onTxPoolBacklog(const QVector<TxBacklogEntry> &txPool, 
         item->setData(0, Qt::UserRole, entry.weight);
         item->setTextAlignment(0, Qt::AlignRight);
 
-        item->setText(1, QString("%1 XMR").arg(WalletManager::displayAmount(entry.fee)));
+        item->setText(1, QString("%1 WOW").arg(WalletManager::displayAmount(entry.fee)));
         item->setData(1, Qt::UserRole, entry.fee);
         item->setTextAlignment(1, Qt::AlignRight);
 
@@ -111,7 +111,7 @@ void TxPoolViewerDialog::onTxPoolBacklog(const QVector<TxBacklogEntry> &txPool, 
     ui->tree_pool->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
 
     ui->label_totalWeight->setText(Utils::formatBytes(totalWeight));
-    ui->label_totalFees->setText(QString("%1 XMR").arg(WalletManager::displayAmount(totalFees)));
+    ui->label_totalFees->setText(QString("%1 WOW").arg(WalletManager::displayAmount(totalFees)));
 
     quint64 fullRewardZone = blockWeightLimit >> 1;
     ui->label_blockWeightLimit->setText(Utils::formatBytes(fullRewardZone));

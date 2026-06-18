@@ -209,8 +209,8 @@ void SendWidget::sendClicked() {
         return;
     }
 
-    if (currency != "XMR" && !sendAll) {
-        // Convert fiat amount to XMR, but only if we're not sending the entire balance
+    if (currency != "WOW" && !sendAll) {
+        // Convert fiat amount to WOW, but only if we're not sending the entire balance
         amount = WalletManager::amountFromDouble(this->conversionAmount());
     }
 
@@ -222,7 +222,7 @@ void SendWidget::sendClicked() {
     }
 
     if (unlocked_balance == 0) {
-        Utils::showError(this, "Unable to create transaction", QString("No spendable balance.\n\n%1 XMR becomes spendable within 10 blocks (~20 minutes).").arg(WalletManager::displayAmount(total_balance - unlocked_balance)), {"Wait for more balance to unlock.", "Click 'Help' to learn more about how balance works."}, "balance");
+        Utils::showError(this, "Unable to create transaction", QString("No spendable balance.\n\n%1 WOW becomes spendable within 10 blocks (~20 minutes).").arg(WalletManager::displayAmount(total_balance - unlocked_balance)), {"Wait for more balance to unlock.", "Click 'Help' to learn more about how balance works."}, "balance");
         return;
     }
 
@@ -289,12 +289,12 @@ void SendWidget::updateConversionLabel() {
 
     QString conversionAmountStr = [this]{
         QString currency = ui->comboCurrencySelection->currentText();
-        if (currency != "XMR") {
-            return QString("~%1 XMR").arg(QString::number(this->conversionAmount(), 'f'));
+        if (currency != "WOW") {
+            return QString("~%1 WOW").arg(QString::number(this->conversionAmount(), 'f'));
 
         } else {
             auto preferredFiatCurrency = conf()->get(Config::preferredFiatCurrency).toString();
-            double conversionAmount = appData()->prices.convert("XMR", preferredFiatCurrency, this->amountDouble());
+            double conversionAmount = appData()->prices.convert("WOW", preferredFiatCurrency, this->amountDouble());
             return QString("~%1 %2").arg(QString::number(conversionAmount, 'f', 2), preferredFiatCurrency);
         }
     }();
@@ -305,7 +305,7 @@ void SendWidget::updateConversionLabel() {
 
 double SendWidget::conversionAmount() {
     QString currency = ui->comboCurrencySelection->currentText();
-    return appData()->prices.convert(currency, "XMR", this->amountDouble());
+    return appData()->prices.convert(currency, "WOW", this->amountDouble());
 }
 
 quint64 SendWidget::amount() {
@@ -384,7 +384,7 @@ void SendWidget::setWebsocketEnabled(bool enabled) {
         this->setupComboBox();
     } else {
         ui->comboCurrencySelection->clear();
-        ui->comboCurrencySelection->insertItem(0, "XMR");
+        ui->comboCurrencySelection->insertItem(0, "WOW");
     }
 }
 
@@ -420,7 +420,7 @@ void SendWidget::onDataFromQR(const QString &data) {
 void SendWidget::setupComboBox() {
     ui->comboCurrencySelection->clear();
 
-    QStringList defaultCurrencies = {"XMR", "USD", "EUR", "CNY", "JPY", "GBP"};
+    QStringList defaultCurrencies = {"WOW", "USD", "EUR", "CNY", "JPY", "GBP"};
     QString preferredCurrency = conf()->get(Config::preferredFiatCurrency).toString();
 
     if (defaultCurrencies.contains(preferredCurrency)) {

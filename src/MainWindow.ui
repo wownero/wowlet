@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Feather</string>
+   <string>wowlet</string>
   </property>
   <property name="windowIcon">
    <iconset resource="assets.qrc">
@@ -290,7 +290,7 @@
             <item>
              <widget class="QLabel" name="label_2">
               <property name="text">
-               <string>Feather supports two airgapped transaction signing methods:</string>
+               <string>wowlet supports two airgapped transaction signing methods:</string>
               </property>
              </widget>
             </item>
@@ -669,9 +669,9 @@
     <string>Report bug</string>
    </property>
   </action>
-  <action name="actionDonate_to_Feather">
+  <action name="actionDonate_to_wowlet">
    <property name="text">
-    <string>Donate to Feather</string>
+    <string>Donate to wowlet</string>
    </property>
   </action>
   <action name="actionExport_CSV">
@@ -689,7 +689,7 @@
   </action>
   <action name="actionShow_xmr_to">
    <property name="text">
-    <string>Show XMR.to</string>
+    <string>Show WOW.to</string>
    </property>
   </action>
   <action name="actionShow_calc">

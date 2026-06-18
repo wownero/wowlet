@@ -151,7 +151,7 @@ void MainWindow::initStatusBar() {
     this->statusBar()->addPermanentWidget(m_statusUpdateAvailable);
 
     m_statusLabelBalance = new ClickableLabel(this);
-    m_statusLabelBalance->setText("Balance: 0 XMR");
+    m_statusLabelBalance->setText("Balance: 0 WOW");
     m_statusLabelBalance->setTextInteractionFlags(Qt::TextSelectableByMouse);
     m_statusLabelBalance->setCursor(Qt::PointingHandCursor);
     this->statusBar()->addPermanentWidget(m_statusLabelBalance);
@@ -511,13 +511,13 @@ void MainWindow::initWalletContext() {
 
     connect(m_wallet, &Wallet::unconfirmedMoneyReceived, this, [this](const QString &txId, uint64_t amount){
        if (m_wallet->isSynchronized() && !m_locked) {
-           auto notify = QString("%1 XMR (pending)").arg(WalletManager::displayAmount(amount, false));
+           auto notify = QString("%1 WOW (pending)").arg(WalletManager::displayAmount(amount, false));
            m_windowManager->notify("Payment received", notify, 5000);
        }
     });
     connect(m_wallet, &Wallet::moneyReceived, this, [this](const QString &txId, uint64_t amount, bool coinbase){
         if (m_wallet->isSynchronized() && !m_locked && coinbase) {
-            auto notify = QString("%1 XMR").arg(WalletManager::displayAmount(amount, false));
+            auto notify = QString("%1 WOW").arg(WalletManager::displayAmount(amount, false));
             m_windowManager->notify("Mining payment received", notify, 5000);
         }
     });
@@ -629,19 +629,19 @@ void MainWindow::onBalanceUpdated(quint64 balance, quint64 spendable) {
         balance_str += "HIDDEN";
     }
     else if (displaySetting == Config::totalBalance) {
-        balance_str += QString("%1 XMR").arg(WalletManager::displayAmount(balance, false, decimals));
+        balance_str += QString("%1 WOW").arg(WalletManager::displayAmount(balance, false, decimals));
     }
     else if (displaySetting == Config::spendable || displaySetting == Config::spendablePlusUnconfirmed) {
-        balance_str += QString("%1 XMR").arg(WalletManager::displayAmount(spendable, false, decimals));
+        balance_str += QString("%1 WOW").arg(WalletManager::displayAmount(spendable, false, decimals));
 
         if (displaySetting == Config::spendablePlusUnconfirmed && balance > spendable) {
-            balance_str += QString(" (+%1 XMR unconfirmed)").arg(WalletManager::displayAmount(balance - spendable, false, decimals));
+            balance_str += QString(" (+%1 WOW unconfirmed)").arg(WalletManager::displayAmount(balance - spendable, false, decimals));
         }
     }
 
     if (conf()->get(Config::balanceShowFiat).toBool() && !hide) {
         QString fiatCurrency = conf()->get(Config::preferredFiatCurrency).toString();
-        double balanceFiatAmount = appData()->prices.convert("XMR", fiatCurrency, balance / constants::cdiv);
+        double balanceFiatAmount = appData()->prices.convert("WOW", fiatCurrency, balance / constants::cdiv);
         balance_str += QString(" (%1)").arg(Utils::amountToCurrencyString(balanceFiatAmount, fiatCurrency));
     }
 
@@ -889,7 +889,7 @@ void MainWindow::onTransactionCreated(PendingTransaction *tx, const QVector<QStr
                 message.description = QString("Transaction was rejected by node. Reason: %1.").arg(QString::fromStdString(e.status()));
             }
             catch (const tools::error::tx_sum_overflow &e) {
-                message.description = "Transaction tries to spend an unrealistic amount of XMR";
+                message.description = "Transaction tries to spend an unrealistic amount of WOW";
                 message.helpItems = {"You have found a bug. Please contact the developers."};
                 message.doc = "report_an_issue";
             }
@@ -955,7 +955,7 @@ void MainWindow::onTransactionCreated(PendingTransaction *tx, const QVector<QStr
         return;
     }
     else if (tx->txCount() > 1) {
-        Utils::showError(this, "Failed to construct transaction", "Transaction tries to spend too many inputs", {"Send a smaller amount of XMR to yourself first."});
+        Utils::showError(this, "Failed to construct transaction", "Transaction tries to spend too many inputs", {"Send a smaller amount of WOW to yourself first."});
         m_wallet->disposeTransaction(tx);
         return;
     }
@@ -1383,7 +1383,7 @@ void MainWindow::showAddressChecker() {
     }
 
     if (!WalletManager::addressValid(address, constants::networkType)) {
-        Utils::showInfo(this, "Invalid address", "The address you entered is not a valid XMR address for the current network type.");
+        Utils::showInfo(this, "Invalid address", "The address you entered is not a valid WOW address for the current network type.");
         return;
     }
 
@@ -1688,7 +1688,7 @@ void MainWindow::onSelectedInputsChanged(const QStringList &selectedInputs) {
     if (numInputs > 0) {
         quint64 totalAmount = m_wallet->coins()->sumAmounts(selectedInputs);
 
-        QString text = QString("Coin control active: %1 selected outputs, %2 XMR").arg(QString::number(numInputs), WalletManager::displayAmount(totalAmount));
+        QString text = QString("Coin control active: %1 selected outputs, %2 WOW").arg(QString::number(numInputs), WalletManager::displayAmount(totalAmount));
         ui->label_coinControl->setText(text);
     }
 }
@@ -1774,7 +1774,7 @@ void MainWindow::updateTitle() {
         title += " [view-only]";
     }
 
-    title += " - Feather";
+    title += " - wowlet";
 
     this->setWindowTitle(title);
 }

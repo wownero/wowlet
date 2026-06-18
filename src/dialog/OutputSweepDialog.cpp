@@ -34,7 +34,7 @@ OutputSweepDialog::OutputSweepDialog(QWidget *parent, quint64 amount)
         QString origAmount = WalletManager::displayAmount(m_amount);
         QString splitAmount = WalletManager::displayAmount(m_amount / value);
 
-        ui->label_split->setText(QString("%1 XMR ≈ %2x %3 XMR").arg(origAmount, QString::number(value), splitAmount));
+        ui->label_split->setText(QString("%1 WOW ≈ %2x %3 WOW").arg(origAmount, QString::number(value), splitAmount));
     });
     ui->label_split->setText("");
 
