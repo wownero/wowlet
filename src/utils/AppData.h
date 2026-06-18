@@ -11,6 +11,8 @@
 #include "TxFiatHistory.h"
 #include "RestoreHeightLookup.h"
 
+class Networking;
+
 class AppData : public QObject {
 Q_OBJECT
 
@@ -29,6 +31,7 @@ private slots:
 private:
     void initRestoreHeights();
 
+    Networking *m_network = nullptr;
     static QPointer<AppData> m_instance;
 };
 

@@ -34,6 +34,29 @@ void Prices::cryptoPricesReceived(const QJsonArray &data) {
     emit cryptoPricesUpdated();
 }
 
+void Prices::neroswapPricesReceived(const QJsonObject &data) {
+    // neroswap returns {"rates": {"WOW": usd, "XMR": usd, ...}}. It is wowlet's sole crypto-price
+    // source (feather's websocket server does not carry WOW), so repopulate markets from it.
+    QJsonObject ratesData = data.value("rates").toObject();
+    if (ratesData.isEmpty())
+        return;
+
+    this->markets.clear();
+    for (const QString &sym : ratesData.keys()) {
+        double usd = ratesData.value(sym).toDouble();
+        if (usd <= 0)
+            continue;
+        marketStruct ms;
+        ms.symbol = sym.toUpper();
+        ms.name = sym;
+        ms.price_usd = usd;
+        ms.price_usd_change_pct_24h = 0.0;  // neroswap does not provide 24h change
+        this->markets.insert(sym.toUpper(), ms);
+    }
+
+    emit cryptoPricesUpdated();
+}
+
 void Prices::fiatPricesReceived(const QJsonObject &data) {
     QJsonObject ratesData = data.value("rates").toObject();
     for (const auto &currency : ratesData.keys()) {
@@ -79,7 +102,7 @@ double Prices::convert(QString symbolFrom, QString symbolTo, double amount) {
 
 QString Prices::atomicUnitsToPreferredFiatString(quint64 amount, bool wrapInParens) {
     QString fiatCurrency = conf()->get(Config::preferredFiatCurrency).toString();
-    double fiatAmount = convert("XMR", fiatCurrency, amount / constants::cdiv);
+    double fiatAmount = convert("WOW", fiatCurrency, amount / constants::cdiv);
     QString currencyString = Utils::amountToCurrencyString(fiatAmount, fiatCurrency);
 
     if (wrapInParens) {

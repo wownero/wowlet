@@ -27,6 +27,7 @@ public:
 
 public slots:
     void cryptoPricesReceived(const QJsonArray &data);
+    void neroswapPricesReceived(const QJsonObject &data);   // wownero: WOW (+ others) USD prices from neroswap
     void fiatPricesReceived(const QJsonObject &data);
 
     double convert(QString symbolFrom, QString symbolTo, double amount);

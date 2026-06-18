@@ -4,9 +4,14 @@
 #include "AppData.h"
 
 #include <QCoreApplication>
+#include <QTimer>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QNetworkReply>
 
 #include "config.h"
 #include "WebsocketNotifier.h"
+#include "Networking.h"
 
 AppData::AppData(QObject *parent)
     : QObject(parent)
@@ -22,10 +27,28 @@ AppData::AppData(QObject *parent)
         websocketNotifier()->websocketClient->sendMsg(data);
     });
 
-    connect(websocketNotifier(), &WebsocketNotifier::CryptoRatesReceived, &this->prices, &Prices::cryptoPricesReceived);
+    // wownero: crypto prices come from neroswap (HTTP poll below), not feather's websocket (no WOW).
+    // connect(websocketNotifier(), &WebsocketNotifier::CryptoRatesReceived, &this->prices, &Prices::cryptoPricesReceived);
     connect(websocketNotifier(), &WebsocketNotifier::FiatRatesReceived, &this->prices, &Prices::fiatPricesReceived);
     connect(websocketNotifier(), &WebsocketNotifier::TxFiatHistoryReceived, this->txFiatHistory, &TxFiatHistory::onWSData);
     connect(websocketNotifier(), &WebsocketNotifier::BlockHeightsReceived, this, &AppData::onBlockHeightsReceived);
+
+    // wownero: poll WOW (+ BTC/XMR/etc.) USD prices from neroswap every 2 minutes.
+    m_network = new Networking(this);
+    auto fetchNeroswapPrices = [this] {
+        QNetworkReply *reply = m_network->getJson(this, "https://prices.neroswap.com/v1/prices");
+        connect(reply, &QNetworkReply::finished, this, [this, reply] {
+            reply->deleteLater();
+            if (reply->error() != QNetworkReply::NoError)
+                return;
+            QJsonObject obj = QJsonDocument::fromJson(reply->readAll()).object();
+            this->prices.neroswapPricesReceived(obj);
+        });
+    };
+    fetchNeroswapPrices();
+    auto *priceTimer = new QTimer(this);
+    connect(priceTimer, &QTimer::timeout, this, fetchNeroswapPrices);
+    priceTimer->start(120 * 1000);
 }
 
 QPointer<AppData> AppData::m_instance(nullptr);
