@@ -41,3 +41,13 @@ jobs:
           cd build
           cmake -DWITH_SCANNER=OFF -DWOWNEROD_DIR=/tmp/wownerod-embed ..
           cmake --build . -j $(nproc)
+      - name: package wowlet
+        run: |
+          mkdir -p dist
+          cp build/bin/feather dist/wowlet
+      - name: upload wowlet artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wowlet-x86_64-linux
+          path: dist/wowlet
+          if-no-files-found: error
