@@ -7,6 +7,7 @@
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QThread>
 #include <QCheckBox>
 
 #include "constants.h"
@@ -251,6 +252,22 @@ void MainWindow::initWidgets() {
     ui->notes->setPlainText(m_wallet->getCacheAttribute("wallet.notes"));
     connect(ui->notes, &QPlainTextEdit::textChanged, [this] {
        m_wallet->setCacheAttribute("wallet.notes", ui->notes->toPlainText());
+    });
+
+    // [Mining] — wowlet: solo-mine to this wallet via the embedded local node (RandomWOW in wownerod)
+    auto *mineAction = new QAction("Mine to this wallet", this);
+    mineAction->setCheckable(true);
+    ui->menuWallet->addAction(mineAction);
+    connect(mineAction, &QAction::toggled, this, [this, mineAction](bool on) {
+        if (on) {
+            int threads = std::max(1, QThread::idealThreadCount() / 2);
+            if (!m_wallet->startMining(threads)) {
+                mineAction->setChecked(false);
+                QMessageBox::warning(this, "Mining", "Could not start mining — make sure the node is connected and synced.");
+            }
+        } else {
+            m_wallet->stopMining();
+        }
     });
 
     // [Plugins..]

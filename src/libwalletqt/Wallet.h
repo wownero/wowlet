@@ -126,6 +126,12 @@ public:
     //! returns true if wallet is currently synchronized
     bool isSynchronized() const;
 
+    // wowlet: solo-mine to this wallet's primary address via the connected daemon (the embedded
+    // local node). Mining runs inside wownerod (RandomWOW); these just toggle it over RPC.
+    bool startMining(quint32 threads = 1);
+    bool stopMining();
+    bool isMining();
+
     //! return true if wallet is connected to a node
     bool isConnected() const;
 

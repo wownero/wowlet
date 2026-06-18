@@ -113,6 +113,18 @@ bool Wallet::isConnected() const {
     return status == ConnectionStatus_Synchronizing || status == ConnectionStatus_Synchronized;
 }
 
+bool Wallet::startMining(quint32 threads) {
+    return m_walletImpl->startMining(m_walletImpl->address(0, 0), threads);
+}
+
+bool Wallet::stopMining() {
+    return m_walletImpl->stopMining();
+}
+
+bool Wallet::isMining() {
+    return m_walletImpl->isMining();
+}
+
 QString Wallet::errorString() const {
     return QString::fromStdString(m_walletImpl->errorString());
 }
