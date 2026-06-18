@@ -41,6 +41,14 @@ public:
      */
     void openWalletAsync(const QString &path, const QString &password, NetworkType::Type nettype = NetworkType::MAINNET, quint64 kdfRounds = 1, const QString &ringDatabasePath = "");
 
+    // wowlet: solo mining via the connected daemon (the embedded local node). startMining first
+    // points the manager at the daemon, then asks it to mine RandomWOW to `address`.
+    void setDaemonAddress(const QString &address);
+    bool startMining(const QString &address, quint32 threads = 1);
+    bool stopMining();
+    bool isMining();
+    double miningHashRate();
+
     Wallet * recoveryWallet(const QString &path, const QString &password, const QString &seed, const QString &seed_offset,
                             NetworkType::Type nettype = NetworkType::MAINNET, quint64 restoreHeight = 0, quint64 kdfRounds = 1, const QString &subaddressLookahead = "");
 

@@ -25,6 +25,7 @@
 #include "model/CoinsModel.h"
 
 #include "utils/ScopeGuard.h"
+#include "utils/DaemonManager.h"
 
 #include "wallet/wallet2.h"
 
@@ -114,19 +115,21 @@ bool Wallet::isConnected() const {
 }
 
 bool Wallet::startMining(quint32 threads) {
-    return m_walletImpl->startMining(m_walletImpl->address(0, 0), threads);
+    auto *wm = WalletManager::instance();
+    wm->setDaemonAddress(daemonManager()->rpcAddress());   // mine via the embedded local node
+    return wm->startMining(this->address(0, 0), threads);
 }
 
 bool Wallet::stopMining() {
-    return m_walletImpl->stopMining();
+    return WalletManager::instance()->stopMining();
 }
 
 bool Wallet::isMining() {
-    return m_walletImpl->isMining();
+    return WalletManager::instance()->isMining();
 }
 
 double Wallet::miningHashRate() {
-    return m_walletImpl->miningHashRate();
+    return WalletManager::instance()->miningHashRate();
 }
 
 QString Wallet::errorString() const {

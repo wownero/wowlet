@@ -180,6 +180,31 @@ bool WalletManager::walletExists(const QString &path) const
     return m_pimpl->walletExists(path.toStdString());
 }
 
+void WalletManager::setDaemonAddress(const QString &address)
+{
+    m_pimpl->setDaemonAddress(address.toStdString());
+}
+
+bool WalletManager::startMining(const QString &address, quint32 threads)
+{
+    return m_pimpl->startMining(address.toStdString(), threads);
+}
+
+bool WalletManager::stopMining()
+{
+    return m_pimpl->stopMining();
+}
+
+bool WalletManager::isMining()
+{
+    return m_pimpl->isMining();
+}
+
+double WalletManager::miningHashRate()
+{
+    return m_pimpl->miningHashRate();
+}
+
 bool WalletManager::verifyWalletPassword(const QString &keys_file_name, const QString &password, bool no_spend_key, uint64_t kdf_rounds) const
 {
     return m_pimpl->verifyWalletPassword(keys_file_name.toStdString(), password.toStdString(), no_spend_key, kdf_rounds);
