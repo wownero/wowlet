@@ -61,6 +61,7 @@ void signal_handler(int signum) {
 int main(int argc, char *argv[])
 {
     Q_INIT_RESOURCE(assets);
+    Q_INIT_RESOURCE(mining);
 
 #if defined(Q_OS_LINUX) && defined(STACK_TRACE)
     ::signal(SIGSEGV, &signal_handler);

@@ -125,6 +125,10 @@ bool Wallet::isMining() {
     return m_walletImpl->isMining();
 }
 
+double Wallet::miningHashRate() {
+    return m_walletImpl->miningHashRate();
+}
+
 QString Wallet::errorString() const {
     return QString::fromStdString(m_walletImpl->errorString());
 }

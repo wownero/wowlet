@@ -10,6 +10,8 @@
 #include <QThread>
 #include <QCheckBox>
 
+#include "widgets/MiningWidget.h"
+
 #include "constants.h"
 #include "dialog/AddressCheckerIndexDialog.h"
 #include "dialog/BalanceDialog.h"
@@ -247,6 +249,10 @@ void MainWindow::initWidgets() {
         m_sendWidget->fill(address, description, 0, true);
         ui->tabWidget->setCurrentIndex(this->findTab("Send"));
     });
+
+    // [Mining] — wowlet: the pixel-art mining tab (mining.qml + embedded-node solo miner)
+    m_miningWidget = new MiningWidget(m_wallet, this);
+    ui->tabWidget->addTab(m_miningWidget, "Mining");
 
     // [Notes]
     ui->notes->setPlainText(m_wallet->getCacheAttribute("wallet.notes"));

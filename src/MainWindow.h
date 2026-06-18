@@ -64,6 +64,7 @@ public:
 };
 
 class WindowManager;
+class MiningWidget;
 class MainWindow : public QMainWindow
 {
 Q_OBJECT
@@ -225,6 +226,7 @@ private:
 
     WalletUnlockWidget *m_walletUnlockWidget = nullptr;
     ContactsWidget *m_contactsWidget = nullptr;
+    MiningWidget *m_miningWidget = nullptr;
     HistoryWidget *m_historyWidget = nullptr;
     SendWidget *m_sendWidget = nullptr;
     ReceiveWidget *m_receiveWidget = nullptr;

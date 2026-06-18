@@ -1,0 +1,34 @@
+<!DOCTYPE RCC><RCC version="1.0">
+  <qresource prefix="/">
+    <file alias="qml/mining.qml">assets/qml/mining.qml</file>
+    <file alias="fonts/ComicMono.ttf">assets/fonts/ComicMono.ttf</file>
+    <file alias="fonts/ComicMono-Bold.ttf">assets/fonts/ComicMono-Bold.ttf</file>
+    <file alias="assets/images/dog_sitting.gif">assets/images/dog_sitting.gif</file>
+    <file alias="assets/images/dog_running.gif">assets/images/dog_running.gif</file>
+    <file alias="mining/amd.png">assets/images/mining/amd.png</file>
+    <file alias="mining/axe.png">assets/images/mining/axe.png</file>
+    <file alias="mining/bg1.gif">assets/images/mining/bg1.gif</file>
+    <file alias="mining/bottom_center_console.png">assets/images/mining/bottom_center_console.png</file>
+    <file alias="mining/bubble.png">assets/images/mining/bubble.png</file>
+    <file alias="mining/elmo.gif">assets/images/mining/elmo.gif</file>
+    <file alias="mining/intel.png">assets/images/mining/intel.png</file>
+    <file alias="mining/lowerleft_btn.png">assets/images/mining/lowerleft_btn.png</file>
+    <file alias="mining/lowerleft_circle.png">assets/images/mining/lowerleft_circle.png</file>
+    <file alias="mining/lowerleft.png">assets/images/mining/lowerleft.png</file>
+    <file alias="mining/lower_repeat.png">assets/images/mining/lower_repeat.png</file>
+    <file alias="mining/lowerright.png">assets/images/mining/lowerright.png</file>
+    <file alias="mining/mining_gradient.png">assets/images/mining/mining_gradient.png</file>
+    <file alias="mining/mining.webp">assets/images/mining/mining.webp</file>
+    <file alias="mining/overlay.png">assets/images/mining/overlay.png</file>
+    <file alias="mining/r_bottom.png">assets/images/mining/r_bottom.png</file>
+    <file alias="mining/r_left.png">assets/images/mining/r_left.png</file>
+    <file alias="mining/r_right.png">assets/images/mining/r_right.png</file>
+    <file alias="mining/solo.png">assets/images/mining/solo.png</file>
+    <file alias="mining/topleft.png">assets/images/mining/topleft.png</file>
+    <file alias="mining/topright_bar.png">assets/images/mining/topright_bar.png</file>
+    <file alias="mining/topright_left.png">assets/images/mining/topright_left.png</file>
+    <file alias="mining/topright_middle.png">assets/images/mining/topright_middle.png</file>
+    <file alias="mining/topright_right.png">assets/images/mining/topright_right.png</file>
+    <file alias="mining/warning.png">assets/images/mining/warning.png</file>
+  </qresource>
+</RCC>

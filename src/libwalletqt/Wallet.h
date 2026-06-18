@@ -131,6 +131,7 @@ public:
     bool startMining(quint32 threads = 1);
     bool stopMining();
     bool isMining();
+    double miningHashRate();
 
     //! return true if wallet is connected to a node
     bool isConnected() const;

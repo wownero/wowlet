@@ -13,6 +13,9 @@ set(QT_COMPONENTS
         Svg
         WebSockets
         SvgWidgets
+        Quick
+        Qml
+        QuickWidgets
 )
 
 if (WITH_SCANNER)
@@ -31,7 +34,7 @@ if (CHECK_UPDATES)
     add_subdirectory(openpgp)
 endif()
 
-qt_add_resources(RESOURCES assets.qrc assets_tor.qrc assets_wownerod.qrc assets_docs.qrc)
+qt_add_resources(RESOURCES assets.qrc assets_tor.qrc assets_wownerod.qrc assets_docs.qrc mining.qrc)
 
 # Compile source files (.h/.cpp)
 file(GLOB SOURCE_FILES
@@ -287,6 +290,9 @@ target_link_libraries(feather PRIVATE
         Qt::Svg
         Qt::WebSockets
         Qt::SvgWidgets
+        Qt::Quick
+        Qt::Qml
+        Qt::QuickWidgets
         Threads::Threads
         ${QRENCODE_LIBRARY}
         ${POLYSEED_LIBRARY}
