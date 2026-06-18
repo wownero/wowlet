@@ -5,6 +5,7 @@
 
 #include "libwalletqt/Wallet.h"
 #include "utils/AppData.h"
+#include "utils/DaemonManager.h"
 #include "utils/Utils.h"
 #include "utils/os/tails.h"
 #include "utils/os/whonix.h"
@@ -267,6 +268,16 @@ void Nodes::autoConnect(bool forceReconnect) {
     }
 
     Wallet::ConnectionStatus status = m_wallet->connectionStatus();
+
+    // wowlet: when running our own embedded node, always connect to it and bypass remote node
+    // selection. Disabling Config::runLocalNode (the deliberate opt-out) restores remote nodes.
+    if (conf()->get(Config::runLocalNode).toBool()) {
+        if (status == Wallet::ConnectionStatus_Disconnected || forceReconnect) {
+            this->connectToNode(FeatherNode(daemonManager()->rpcAddress()));
+        }
+        return;
+    }
+
     bool wsMode = (this->source() == NodeSource::websocket);
 
     if (wsMode && !m_wsNodesReceived && websocketNodes().count() == 0) {
