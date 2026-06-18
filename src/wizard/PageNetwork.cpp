@@ -17,7 +17,7 @@ PageNetwork::PageNetwork(QWidget *parent)
     , m_portOpenWatcher(new QFutureWatcher<QPair<bool, QString>>(this))
 {
     ui->setupUi(this);
-    this->setTitle("Welcome to Feather");
+    this->setTitle("Welcome to wowlet");
 
     ui->frame_nodeDetected->hide();
     ui->frame_customNode->hide();

@@ -245,7 +245,7 @@ QDir Config::defaultConfigDir() {
 #elif defined(Q_OS_MACOS)
     return QDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation));
 #else
-    return QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + "/feather");
+    return QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + "/wowlet");
 #endif
 }
 

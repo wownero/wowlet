@@ -44,7 +44,7 @@ WindowManager::WindowManager(QObject *parent)
     connect(qApp, &QGuiApplication::lastWindowClosed, this, &WindowManager::quitAfterLastWindow);
 
     m_tray = new QSystemTrayIcon(icons()->icon("appicons/64x64.png"));
-    m_tray->setToolTip("Feather Wallet");
+    m_tray->setToolTip("wowlet");
     this->buildTrayMenu();
     m_tray->setVisible(conf()->get(Config::showTrayIcon).toBool());
 

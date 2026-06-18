@@ -86,7 +86,7 @@
        <item row="0" column="1">
         <widget class="QLabel" name="label_8">
          <property name="text">
-          <string>featherwallet.org</string>
+          <string>wownero.org</string>
          </property>
          <property name="textInteractionFlags">
           <set>Qt::TextInteractionFlag::LinksAccessibleByMouse|Qt::TextInteractionFlag::TextSelectableByMouse</set>
@@ -103,7 +103,7 @@
        <item row="1" column="1">
         <widget class="QLabel" name="label_19">
          <property name="text">
-          <string>featherdvtpi7ckdbkb2yxjfwx3oyvr3xjz3oo4rszylfzjdg6pbm3id.onion</string>
+          <string>wownero.org</string>
          </property>
          <property name="textInteractionFlags">
           <set>Qt::TextInteractionFlag::LinksAccessibleByMouse|Qt::TextInteractionFlag::TextSelectableByMouse</set>
@@ -120,7 +120,7 @@
        <item row="2" column="1">
         <widget class="QLabel" name="label_10">
          <property name="text">
-          <string>docs.featherwallet.org</string>
+          <string>wownero.org</string>
          </property>
          <property name="textInteractionFlags">
           <set>Qt::TextInteractionFlag::LinksAccessibleByMouse|Qt::TextInteractionFlag::TextSelectableByMouse</set>
@@ -137,7 +137,7 @@
        <item row="3" column="1">
         <widget class="QLabel" name="label_11">
          <property name="text">
-          <string>github.com/feather-wallet/feather</string>
+          <string>github.com/wownero/wowlet</string>
          </property>
          <property name="textInteractionFlags">
           <set>Qt::TextInteractionFlag::LinksAccessibleByMouse|Qt::TextInteractionFlag::TextSelectableByMouse</set>
@@ -154,7 +154,7 @@
        <item row="4" column="1">
         <widget class="QLabel" name="label_13">
          <property name="text">
-          <string>#feather on OFTC</string>
+          <string>#wownero on Libera.Chat</string>
          </property>
          <property name="textInteractionFlags">
           <set>Qt::TextInteractionFlag::LinksAccessibleByMouse|Qt::TextInteractionFlag::TextSelectableByMouse</set>
@@ -171,7 +171,7 @@
        <item row="5" column="1">
         <widget class="QLabel" name="label_14">
          <property name="text">
-          <string>#feather:monero.social</string>
+          <string>#wownero:monero.social</string>
          </property>
          <property name="textInteractionFlags">
           <set>Qt::TextInteractionFlag::LinksAccessibleByMouse|Qt::TextInteractionFlag::TextSelectableByMouse</set>
@@ -188,7 +188,7 @@
        <item row="6" column="1">
         <widget class="QLabel" name="label_15">
          <property name="text">
-          <string>dev@featherwallet.org</string>
+          <string>dev@wownero.org</string>
          </property>
          <property name="textInteractionFlags">
           <set>Qt::TextInteractionFlag::LinksAccessibleByMouse|Qt::TextInteractionFlag::TextSelectableByMouse</set>

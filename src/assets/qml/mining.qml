@@ -5,7 +5,8 @@ import QtQuick.Controls
 Rectangle {
     id: root
     color: "#181725"
-    anchors.fill: parent
+    width: 980
+    height: 480
     property variant buffer: []
     property int bufferMaxLength: 12
     // state:      0:idle 1:startup 2:syncing 3:mining
