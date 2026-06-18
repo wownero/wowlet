@@ -1,6 +1,6 @@
 name: ci/gh-actions/build
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 
 # NOTE (wownero-rebase branch): the Arch + macOS jobs from upstream Feather's build.yml are
 # temporarily disabled to get a fast, cheap iteration loop while bringing up the build against the
