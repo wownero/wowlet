@@ -2,6 +2,10 @@ name: ci/gh-actions/build
 
 on: [push, pull_request]
 
+# NOTE (wownero-rebase branch): the Arch + macOS jobs from upstream Feather's build.yml are
+# temporarily disabled to get a fast, cheap iteration loop while bringing up the build against the
+# wownero monero submodule (gui branch). Restore the full matrix from upstream once Ubuntu is green.
+
 jobs:
   build-ubuntu-without-scanner:
     name: "Ubuntu 24.04 (no scanner)"
@@ -28,38 +32,3 @@ jobs:
           cd build
           cmake -DWITH_SCANNER=OFF ..
           cmake --build . -j $(nproc)
-
-  build-arch:
-    name: 'Arch Linux'
-    runs-on: ubuntu-latest
-    container:
-      image: archlinux:latest
-    steps:
-      - name: install dependencies
-        run: pacman -Syyu --noconfirm git cmake base-devel unbound boost qrencode qt6-base qt6-svg qt6-websockets qt6-wayland qt6-multimedia libzip hidapi protobuf zxing-cpp
-      - name: configure git
-        run: git config --global --add safe.directory '*'
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: build
-        run: |
-          cmake -S . -B build
-          cmake --build build -j $(nproc)
-
-  build-macos:
-    name: 'macOS (brew)'
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: install dependencies
-        run: |
-          brew uninstall cmake
-          brew update
-          brew install --quiet qt libsodium libzip qrencode unbound cmake boost hidapi openssl expat libunwind-headers protobuf pkgconfig
-      - name: build
-        run: |
-          cmake -S . -B build -DWITH_SCANNER=Off
-          cmake --build build -j $(nproc)
