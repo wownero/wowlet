@@ -61,7 +61,7 @@ void AppData::onBlockHeightsReceived(int mainnet, int stagenet) {
 void AppData::initRestoreHeights() {
     restoreHeights[NetworkType::TESTNET] = new RestoreHeightLookup(NetworkType::TESTNET);
     restoreHeights[NetworkType::STAGENET] = RestoreHeightLookup::fromFile(":/assets/restore_heights_monero_stagenet.txt", NetworkType::STAGENET);
-    restoreHeights[NetworkType::MAINNET] = RestoreHeightLookup::fromFile(":/assets/restore_heights_monero_mainnet.txt", NetworkType::MAINNET);
+    restoreHeights[NetworkType::MAINNET] = RestoreHeightLookup::fromFile(":/assets/restore_heights_wownero_mainnet.txt", NetworkType::MAINNET);
 }
 
 AppData* AppData::instance()
