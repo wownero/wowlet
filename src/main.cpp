@@ -71,6 +71,10 @@ int main(int argc, char *argv[])
     Q_INIT_RESOURCE(assets_tor);
 #endif
 
+#if defined(HAS_WOWNEROD_BIN)
+    Q_INIT_RESOURCE(assets_wownerod);
+#endif
+
 #ifdef _WIN32
 if (AttachConsole(ATTACH_PARENT_PROCESS)) {
     freopen("CONOUT$", "w", stdout);

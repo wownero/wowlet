@@ -21,6 +21,7 @@ cmake_policy(SET CMP0074 NEW)
 option(STATIC "Link libraries statically, requires static Qt" OFF)
 option(SELF_CONTAINED "Disable when building Feather for packages" OFF)
 option(TOR_DIR "Directory containing Tor binaries to embed inside Feather" OFF)
+option(WOWNEROD_DIR "Directory containing the wownerod binary to embed inside wowlet" OFF)
 option(CHECK_UPDATES "Enable checking for application updates" OFF)
 option(PLATFORM_INSTALLER "Built-in updater fetches installer (windows-only)" OFF)
 option(USE_DEVICE_TREZOR "Trezor support compilation" ON)
@@ -137,6 +138,7 @@ endif()
 
 include(GenerateDocs)
 include(TorQrcGenerator)
+include(WownerodQrcGenerator)
 
 # To build Feather with embedded (and static) Tor, pass CMake -DTOR_DIR=/path/to/tor/
 if(TOR_DIR)
@@ -161,6 +163,26 @@ if(TOR_DIR)
     message(STATUS "Embedding Tor binaries at ${TOR_DIR}")
 else()
     message(STATUS "Skipping Tor inclusion because -DTOR_DIR=Off")
+endif()
+
+# wowlet: copy the wownerod binary into src/assets/wownerod so it gets embedded — single self-contained
+# file with the node inside. WOWNEROD_DIR points at a dir containing a `wownerod` (or wownerod.exe).
+if(WOWNEROD_DIR)
+    execute_process(COMMAND bash -c "mkdir -p ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/wownerod")
+    if (REPRODUCIBLE)
+        set(WOWNEROD_COPY_CMD "cp -a ${WOWNEROD_DIR}/* ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/wownerod")
+    else()
+        set(WOWNEROD_COPY_CMD "cp -au ${WOWNEROD_DIR}/* ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/wownerod")
+    endif()
+
+    execute_process(COMMAND bash -c "${WOWNEROD_COPY_CMD}" RESULT_VARIABLE ret)
+    if(ret EQUAL "1")
+        message(FATAL_ERROR "wownerod copy failure: ${WOWNEROD_COPY_CMD}")
+    endif()
+
+    message(STATUS "Embedding wownerod binary from ${WOWNEROD_DIR}")
+else()
+    message(STATUS "Skipping wownerod inclusion because -DWOWNEROD_DIR=Off")
 endif()
 
 message(STATUS "Using Boost include dir at ${Boost_INCLUDE_DIRS}")

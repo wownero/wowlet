@@ -75,6 +75,7 @@ public:
         // Embedded node (wowlet)
         runLocalNode,
         pruneBlockchain,
+        wownerodPath,
 
         // Network -> Proxy
         proxy,

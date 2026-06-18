@@ -67,6 +67,7 @@ static const QHash<Config::ConfigKey, ConfigDirective> configStrings = {
         {Config::skin,{QS("skin"), "Wownero"}},
         {Config::runLocalNode,{QS("runLocalNode"), true}},        // wowlet: run own node by default
         {Config::pruneBlockchain,{QS("pruneBlockchain"), false}}, // full archival by default
+        {Config::wownerodPath,{QS("wownerodPath"), ""}},          // optional override; bundled by default
         {Config::amountPrecision, {QS("amountPrecision"), 12}},
         {Config::dateFormat, {QS("dateFormat"), "yyyy-MM-dd"}},
         {Config::timeFormat, {QS("timeFormat"), "HH:mm"}},

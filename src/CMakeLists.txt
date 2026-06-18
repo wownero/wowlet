@@ -31,7 +31,7 @@ if (CHECK_UPDATES)
     add_subdirectory(openpgp)
 endif()
 
-qt_add_resources(RESOURCES assets.qrc assets_tor.qrc assets_docs.qrc)
+qt_add_resources(RESOURCES assets.qrc assets_tor.qrc assets_wownerod.qrc assets_docs.qrc)
 
 # Compile source files (.h/.cpp)
 file(GLOB SOURCE_FILES
@@ -211,6 +211,10 @@ endif()
 
 if(TOR_DIR)
     target_compile_definitions(feather PRIVATE HAS_TOR_BIN=1)
+endif()
+
+if(WOWNEROD_DIR)
+    target_compile_definitions(feather PRIVATE HAS_WOWNEROD_BIN=1)
 endif()
 
 if(WITH_SCANNER)

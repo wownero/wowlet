@@ -16,16 +16,8 @@ DaemonManager::DaemonManager(QObject *parent)
     : QObject(parent)
     , m_process(new QProcess(this))
 {
+    // The embedded wownerod is unpacked here (writable, outside any read-only app bundle).
     this->daemonDir = Config::defaultConfigDir().filePath("node");
-#if defined(Q_OS_MACOS)
-    // On macOS the binary ships next to the app inside the bundle.
-    {
-        QDir appBinaryDir(QCoreApplication::applicationDirPath());
-        appBinaryDir.cd("..");
-        this->daemonDir = appBinaryDir.filePath("bin");
-    }
-#endif
-
     this->blockchainDir = Config::defaultConfigDir().filePath("node/blockchain");
 
     m_process->setProcessChannelMode(QProcess::MergedChannels);
@@ -157,12 +149,23 @@ bool DaemonManager::unpackBins() {
     daemonBin += ".exe";
 #endif
 
-    this->daemonPath = QDir(this->daemonDir).filePath(daemonBin);
+    // 1. Explicit path the user configured (or already-running node they point us at).
+    QString configured = conf()->get(Config::wownerodPath).toString();
+    if (!configured.isEmpty() && QFileInfo(configured).isFile()) {
+        this->daemonPath = configured;
+        return true;
+    }
 
-#if defined(Q_OS_MACOS)
-    // Shipped next to the app bundle; nothing to unpack.
-    return QFileInfo(this->daemonPath).isFile();
-#endif
+    // 2. Shipped next to the wowlet executable — the packaging default (monero-GUI ships monerod
+    //    the same way). Avoids bloating the app binary by embedding a ~15 MB daemon in resources.
+    QString sibling = QDir(QCoreApplication::applicationDirPath()).filePath(daemonBin);
+    if (QFileInfo(sibling).isFile()) {
+        this->daemonPath = sibling;
+        return true;
+    }
+
+    // 3. Unpack the embedded copy into the (writable) data dir — the single-file default, all platforms.
+    this->daemonPath = QDir(this->daemonDir).filePath(daemonBin);
 
     if (m_unpacked)
         return true;
