@@ -85,11 +85,11 @@ if (AttachConsole(ATTACH_PARENT_PROCESS)) {
 
     Application app(argc, argv);
 
-    QApplication::setApplicationName("FeatherWallet");
+    QApplication::setApplicationName("wowlet");
     QApplication::setApplicationVersion(FEATHER_VERSION);
 
     QCommandLineParser parser;
-    parser.setApplicationDescription("Feather - a free Monero desktop wallet");
+    parser.setApplicationDescription("wowlet - a free Wownero desktop wallet");
     QCommandLineOption helpOption = parser.addHelpOption();
     QCommandLineOption versionOption = parser.addVersionOption();
 
