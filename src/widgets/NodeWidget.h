@@ -16,6 +16,7 @@ namespace Ui {
 }
 
 class NodeModel;
+class QCheckBox;
 class NodeWidget : public QWidget
 {
     Q_OBJECT
@@ -44,12 +45,14 @@ private slots:
 signals:
     void connectToNode(FeatherNode node);
     void nodeSourceChanged(NodeSource nodeSource);
+    void localNodeToggled(bool enabled);
 
 private:
     void showContextMenu(const QPoint &pos, const FeatherNode &node);
     FeatherNode selectedNode();
 
     QScopedPointer<Ui::NodeWidget> ui;
+    QCheckBox *m_localNodeCheck = nullptr;
     Nodes *m_nodes;
     NodeModel  *m_customModel;
     NodeModel *m_wsModel;

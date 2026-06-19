@@ -16,6 +16,7 @@
 #include "utils/WebsocketNotifier.h"
 #include "widgets/NetworkProxyWidget.h"
 #include "utils/ColorScheme.h"
+#include "utils/DaemonManager.h"
 
 Settings::Settings(Nodes *nodes, QWidget *parent)
         : QDialog(parent)
@@ -169,6 +170,15 @@ void Settings::setupNetworkTab() {
         ui->nodeWidget->setupUI(m_nodes);
         connect(ui->nodeWidget, &NodeWidget::nodeSourceChanged, m_nodes, &Nodes::onNodeSourceChanged);
         connect(ui->nodeWidget, &NodeWidget::connectToNode, m_nodes, QOverload<const FeatherNode&>::of(&Nodes::connectToNode));
+        // wowlet: built-in node on/off — start/stop the embedded wownerod, then reconnect (autoConnect
+        // honours Config::runLocalNode: local 127.0.0.1 when on, the selected remote when off).
+        connect(ui->nodeWidget, &NodeWidget::localNodeToggled, this, [this](bool enabled){
+            if (enabled)
+                daemonManager()->start();
+            else
+                daemonManager()->stop();
+            m_nodes->autoConnect(true);
+        });
     } else {
         m_nodes = new Nodes(this, nullptr);
         ui->nodeWidget->setupUI(m_nodes);

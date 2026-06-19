@@ -5,10 +5,13 @@
 #include "ui_NodeWidget.h"
 
 #include <QAction>
+#include <QCheckBox>
 #include <QDesktopServices>
 #include <QInputDialog>
+#include <QLabel>
 #include <QMenu>
 #include <QTableWidget>
+#include <QVBoxLayout>
 
 #include "model/NodeModel.h"
 #include "utils/Icons.h"
@@ -52,6 +55,36 @@ NodeWidget::NodeWidget(QWidget *parent)
     ui->frame_addCustomNodes->setVisible(index);
 
     this->onWebsocketStatusChanged();
+
+    // wowlet: built-in node toggle + the "why run your own node" messaging. Running your own node is
+    // a privacy win (no remote operator sees your wallet) AND it strengthens the Wownero network by
+    // adding a peer — a deliberate differentiator we surface clearly here.
+    m_localNodeCheck = new QCheckBox(tr("Run your own Wownero node (much recommended)"), this);
+    m_localNodeCheck->setChecked(conf()->get(Config::runLocalNode).toBool());
+    auto *localNodeInfo = new QLabel(
+        tr("wowlet bundles its own node so you can be your own boss — and every node keeps the Wownero "
+           "network strong + decentralized. 🐕 Uncheck to use a remote node instead."), this);
+    localNodeInfo->setWordWrap(true);
+    localNodeInfo->setStyleSheet("color: gray;");
+
+    if (auto *vlayout = qobject_cast<QVBoxLayout*>(this->layout())) {
+        vlayout->insertWidget(0, localNodeInfo);
+        vlayout->insertWidget(0, m_localNodeCheck);
+    }
+
+    auto applyLocalNodeState = [this](bool on) {
+        // When the built-in node is on, the remote list is overridden — grey it out so it's obvious.
+        ui->stackedWidget->setEnabled(!on);
+        ui->checkBox_websocketList->setEnabled(!on);
+        ui->frame_addCustomNodes->setEnabled(!on);
+    };
+    applyLocalNodeState(m_localNodeCheck->isChecked());
+
+    connect(m_localNodeCheck, &QCheckBox::toggled, this, [this, applyLocalNodeState](bool checked){
+        conf()->set(Config::runLocalNode, checked);
+        applyLocalNodeState(checked);
+        emit localNodeToggled(checked);
+    });
 }
 
 void NodeWidget::onShowWSContextMenu(const QPoint &pos) {
