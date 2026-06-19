@@ -26,7 +26,7 @@ public:
 
     void init();
     void start();
-    void stop();
+    void stop(bool wait = true);   // wait=false: non-blocking (don't freeze the UI on a settings toggle)
     bool unpackBins();
 
     bool isStarted() const { return m_started; }

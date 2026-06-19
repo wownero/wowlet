@@ -176,7 +176,7 @@ void Settings::setupNetworkTab() {
             if (enabled)
                 daemonManager()->start();
             else
-                daemonManager()->stop();
+                daemonManager()->stop(false);   // non-blocking: don't freeze Settings while wownerod flushes
             m_nodes->autoConnect(true);
         });
     } else {

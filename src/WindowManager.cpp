@@ -3,9 +3,15 @@
 
 #include "WindowManager.h"
 
+#include <QCheckBox>
+#include <QDialog>
 #include <QDialogButtonBox>
+#include <QFont>
 #include <QInputDialog>
+#include <QLabel>
 #include <QMessageBox>
+#include <QPushButton>
+#include <QVBoxLayout>
 #include <QWindow>
 
 #include "Application.h"
@@ -48,15 +54,21 @@ WindowManager::WindowManager(QObject *parent)
     this->buildTrayMenu();
     m_tray->setVisible(conf()->get(Config::showTrayIcon).toBool());
 
-    // wowlet: boot the embedded wownerod node early so it syncs while the user opens their wallet.
-    // No-op if the user disabled the local node (Config::runLocalNode) or no daemon is bundled.
-    daemonManager()->init();
-    daemonManager()->start();
-
     this->initSkins();
     this->patchMacStylesheet();
 
     this->showCrashLogs();
+
+    // wowlet: on the very first launch, let the user choose their own node vs a remote one BEFORE anything
+    // connects. No node — local or remote — starts until they hit Continue. Later launches use the saved choice.
+    if (conf()->get(Config::firstRun).toBool()) {
+        this->showNodeWelcome();
+    }
+
+    // wowlet: boot the embedded wownerod (shouldStartDaemon() makes this a no-op if the user chose a remote
+    // node), so it syncs while the user opens their wallet.
+    daemonManager()->init();
+    daemonManager()->start();
 
     // wowlet: the embedded local node is configured automatically — skip the first-run network wizard.
     this->onInitialNetworkConfigured();
@@ -66,6 +78,45 @@ WindowManager::WindowManager(QObject *parent)
     if (!this->autoOpenWallet()) {
         this->initWizard();
     }
+}
+
+// wowlet: first-run "be your own node" welcome. Shown before any node starts; records the user's choice
+// in Config::runLocalNode, which start()/autoConnect then honour.
+void WindowManager::showNodeWelcome() {
+    QDialog dlg;
+    dlg.setWindowTitle("Welcome to wowlet");
+    dlg.setMinimumWidth(440);
+
+    auto *title = new QLabel("🐕 Welcome to wowlet", &dlg);
+    QFont tf = title->font();
+    tf.setPointSize(tf.pointSize() + 4);
+    tf.setBold(true);
+    title->setFont(tf);
+
+    auto *intro = new QLabel("wowlet runs your own Wownero node by default: be your own boss and help run the network.", &dlg);
+    intro->setWordWrap(true);
+
+    auto *check = new QCheckBox("Run your own Wownero node (many recommended)", &dlg);
+    check->setChecked(conf()->get(Config::runLocalNode).toBool());
+
+    auto *hint = new QLabel("(untick to use a remote node instead)", &dlg);
+    hint->setStyleSheet("color: gray;");
+
+    auto *btn = new QPushButton("Continue", &dlg);
+    btn->setDefault(true);
+    connect(btn, &QPushButton::clicked, &dlg, &QDialog::accept);
+
+    auto *layout = new QVBoxLayout(&dlg);
+    layout->addWidget(title);
+    layout->addWidget(intro);
+    layout->addSpacing(8);
+    layout->addWidget(check);
+    layout->addWidget(hint);
+    layout->addSpacing(8);
+    layout->addWidget(btn, 0, Qt::AlignRight);
+
+    dlg.exec();   // modal — blocks until Continue
+    conf()->set(Config::runLocalNode, check->isChecked());
 }
 
 QPointer<WindowManager> WindowManager::m_instance(nullptr);

@@ -97,7 +97,7 @@ void DaemonManager::start() {
     m_started = true;
 }
 
-void DaemonManager::stop() {
+void DaemonManager::stop(bool wait) {
     m_stopping = true;
     if (m_process->state() == QProcess::ProcessState::NotRunning) {
         m_started = false;
@@ -107,12 +107,14 @@ void DaemonManager::stop() {
     // wownerod owns an LMDB database. Send SIGTERM so it flushes and exits cleanly; only hard-kill
     // if it refuses to shut down, to avoid blockchain database corruption.
     m_process->terminate();
+    m_started = false;
+    if (!wait)
+        return;   // toggle/live use: let it flush + exit in the background instead of freezing the UI thread.
     if (!m_process->waitForFinished(30000)) {
         qWarning() << "wownerod did not exit gracefully within 30s; killing";
         m_process->kill();
         m_process->waitForFinished(5000);
     }
-    m_started = false;
 }
 
 void DaemonManager::onStateChanged(QProcess::ProcessState state) {

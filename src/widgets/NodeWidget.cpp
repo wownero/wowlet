@@ -59,11 +59,11 @@ NodeWidget::NodeWidget(QWidget *parent)
     // wowlet: built-in node toggle + the "why run your own node" messaging. Running your own node is
     // a privacy win (no remote operator sees your wallet) AND it strengthens the Wownero network by
     // adding a peer — a deliberate differentiator we surface clearly here.
-    m_localNodeCheck = new QCheckBox(tr("Run your own Wownero node (much recommended)"), this);
+    m_localNodeCheck = new QCheckBox(tr("Run your own Wownero node (many recommended)"), this);
     m_localNodeCheck->setChecked(conf()->get(Config::runLocalNode).toBool());
     auto *localNodeInfo = new QLabel(
-        tr("wowlet bundles its own node so you can be your own boss — and every node keeps the Wownero "
-           "network strong + decentralized. 🐕 Uncheck to use a remote node instead."), this);
+        tr("wowlet runs your own Wownero node by default: be your own boss and help run the network. "
+           "🐕 Uncheck to use a remote node instead."), this);
     localNodeInfo->setWordWrap(true);
     localNodeInfo->setStyleSheet("color: gray;");
 

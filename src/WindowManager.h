@@ -80,6 +80,7 @@ private:
     bool autoOpenWallet();
 
     void initWizard();
+    void showNodeWelcome();   // wowlet: first-run "be your own node" choice, before any node starts
     WalletWizard* createWizard(WalletWizard::Page startPage);
 
     void handleWalletError(const Utils::Message &message);
