@@ -9,6 +9,14 @@
 #include <QQmlContext>
 #include <QQuickItem>
 #include <QThread>
+#include <QDateTime>
+
+static QString formatUptime(qint64 secs) {
+    return QString("%1:%2:%3")
+        .arg(secs / 3600, 2, 10, QChar('0'))
+        .arg((secs % 3600) / 60, 2, 10, QChar('0'))
+        .arg(secs % 60, 2, 10, QChar('0'));
+}
 
 MiningWidget::MiningWidget(Wallet *wallet, QWidget *parent)
     : QWidget(parent)
@@ -49,11 +57,18 @@ void MiningWidget::poll() {
     bool mining = m_wallet->isMining();
     m_backend->setState(mining ? 3 : 0);
 
+    if (mining && !m_mining)
+        m_miningStartSecs = QDateTime::currentSecsSinceEpoch();   // mining just started — anchor uptime
+    m_mining = mining;
+
     if (mining) {
         double hr = m_wallet->miningHashRate();
         QString hrStr = hr >= 1000 ? QString("%1 kH/s").arg(hr / 1000.0, 0, 'f', 2)
                                    : QString("%1 H/s").arg(hr, 0, 'f', 0);
         emit m_backend->hashrate(hrStr);
+        emit m_backend->uptimeChanged(formatUptime(QDateTime::currentSecsSinceEpoch() - m_miningStartSecs));
+    } else {
+        emit m_backend->uptimeChanged("-");
     }
 
     quint64 from = m_wallet->blockChainHeight();

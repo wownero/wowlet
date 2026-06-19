@@ -48,6 +48,8 @@ private:
     QQuickWidget *m_quickWidget;
     MiningBackend *m_backend;
     QTimer *m_timer;
+    bool m_mining = false;          // last-seen mining state, to detect start transitions
+    qint64 m_miningStartSecs = 0;   // when the current mining run started (for uptime)
 };
 
 #endif //WOWLET_MININGWIDGET_H
