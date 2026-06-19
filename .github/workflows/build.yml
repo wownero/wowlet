@@ -19,7 +19,7 @@ jobs:
         run: apt -y install curl bzip2 git cmake build-essential ccache libssl-dev libunbound-dev libboost-all-dev libzmq3-dev
                             libqrencode-dev qt6-base-dev qt6-svg-dev qt6-websockets-dev qt6-multimedia-dev
                             qt6-wayland-dev qt6-declarative-dev libzip-dev libsodium-dev libgcrypt20-dev libx11-xcb-dev
-                            qml6-module-qtquick-controls qml6-module-qtquick-layouts qml6-module-qtqml-workerscript qml6-module-qtquick-window
+                            qml6-module-qtquick qml6-module-qtquick-layouts qml6-module-qtquick-window qml6-module-qtqml-workerscript qml6-module-qtqml-models
                             protobuf-compiler libprotobuf-dev libhidapi-dev libzxing-dev libusb-dev
                             libusb-1.0-0-dev
       - name: configure git
@@ -63,12 +63,41 @@ jobs:
           ./linuxdeploy --appdir AppDir --plugin qt \
             -d AppDir/usr/share/applications/wowlet.desktop \
             -i AppDir/usr/share/icons/hicolor/256x256/apps/wowlet.png
-          # qmlimportscanner doesn't follow qmldir `depends`, so QtQuick's transitive QtQml.WorkerScript
-          # (+ QtQml.Models) get skipped. Copy the whole installed QtQml tree in explicitly.
+          # ---------------------------------------------------------------------------------------
+          # Make the QML bundle COMPLETE and deterministic (no whack-a-mole).
+          #
+          # qmlimportscanner only reads `import` lines in our source QML; it does NOT follow the
+          # `depends`/`default import`/singleton chains inside a Qt module's own qmldir. So transitive
+          # modules (QtQuick -> QtQml.WorkerScript/Models, etc.) get silently skipped. Rather than
+          # enumerate them one by one, blanket-copy the whole QtQuick + QtQml module TREES, then
+          # resolve each copied plugin .so's linked Qt libs into usr/lib ourselves (linuxdeploy only
+          # does that for modules IT deployed, not for ones we copy manually).
+          # ---------------------------------------------------------------------------------------
           QMLDIR=$(qmake6 -query QT_INSTALL_QML)
-          mkdir -p AppDir/usr/qml
-          cp -rn "$QMLDIR/QtQml" AppDir/usr/qml/ 2>/dev/null || true
-          ls AppDir/usr/qml/QtQml/ | sed 's/^/  bundled QtQml submodule: /'
+          mkdir -p AppDir/usr/qml AppDir/usr/lib
+          # Blanket-copy the full module trees we depend on (QtQuick incl. Layouts/Window, QtQml incl.
+          # WorkerScript/Models). -n = don't clobber what linuxdeploy already (correctly) deployed.
+          for m in QtQuick QtQml; do
+            cp -rn "$QMLDIR/$m" AppDir/usr/qml/ 2>/dev/null || true
+          done
+          # Resolve the DT_NEEDED Qt6 libs of EVERY bundled QML plugin .so into usr/lib. This closes
+          # the dlopen gap for the trees we copied by hand (libQt6Quick, libQt6Qml, libQt6QmlModels,
+          # libQt6QmlWorkerScript, libQt6QuickLayouts, etc.). -L follows symlinks, -n won't clobber.
+          find AppDir/usr/qml -name '*.so' -print0 | while IFS= read -r -d '' so; do
+            ldd "$so" 2>/dev/null | awk '/=> \//{print $3}' \
+              | grep -E '/(libQt6|libicu|libpcre2|libdouble-conversion|libzstd|libb2|libpng|libharfbuzz|libmd4c|libglib|libgraphite)' \
+              | while read -r lib; do cp -L -n "$lib" AppDir/usr/lib/ 2>/dev/null || true; done
+          done
+          # Sanity: linuxdeploy-plugin-qt writes AppDir/usr/bin/qt.conf with `Imports=qml`/`Qml2Imports=qml`
+          # (Prefix=../), which makes usr/qml the relocatable runtime import path. Confirm it's there.
+          echo "=== qt.conf ===" && cat AppDir/usr/bin/qt.conf 2>/dev/null || echo "WARNING: no qt.conf written by linuxdeploy-plugin-qt"
+          echo "=== bundled QtQuick/QtQml submodules ===" && (ls AppDir/usr/qml/QtQuick AppDir/usr/qml/QtQml 2>/dev/null | sed 's/^/  /')
+          # Guard: mining.qml must NOT pull in QtQuick.Controls/Templates (we removed that import).
+          # If a future edit re-adds a Controls type, this fails loudly instead of shipping a white tab.
+          if grep -q 'import QtQuick.Controls' src/assets/qml/mining.qml; then
+            echo "ERROR: mining.qml imports QtQuick.Controls again — bundle QtQuick/Templates+Controls trees or remove the import." >&2
+            exit 1
+          fi
           # Package (linuxdeploy already wrote AppRun + .desktop + .DirIcon into AppDir root).
           curl -sL -o appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool
