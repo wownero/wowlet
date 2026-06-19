@@ -36,12 +36,18 @@ $(package)_qtshadertools_sha256_hash=e43cb1ae8809b2a858281ee269f98da59d0fc1bcf95
 $(package)_qtwayland_file_name=qtwayland-$($(package)_suffix)
 $(package)_qtwayland_sha256_hash=e710e6e760f92922b86e4dd68f6bbe94ef6510919519d1b0068e874b5ad84d37
 
+# wowlet: qtdeclarative (Qt Quick / QML engine) — needed for the mining tab (mining.qml). Upstream
+# Feather is widgets-only so it omitted this; the native Ubuntu build only worked via distro QML.
+$(package)_qtdeclarative_file_name=qtdeclarative-$($(package)_suffix)
+$(package)_qtdeclarative_sha256_hash=4eece569431ddf8324e7d322fa27001916570b23df535f8fb28aba445eedfde9
+
 $(package)_extra_sources += $($(package)_qttools_file_name)
 $(package)_extra_sources += $($(package)_qtsvg_file_name)
 $(package)_extra_sources += $($(package)_qtwebsockets_file_name)
 $(package)_extra_sources += $($(package)_qtmultimedia_file_name)
 $(package)_extra_sources += $($(package)_qtshadertools_file_name)
 $(package)_extra_sources += $($(package)_qtwayland_file_name)
+$(package)_extra_sources += $($(package)_qtdeclarative_file_name)
 
 define $(package)_set_vars
 $(package)_config_opts += -DQT_HOST_PATH=$(build_prefix)/qt-host
@@ -173,7 +179,8 @@ $(call fetch_file,$(package),$($(package)_download_path),$($(package)_qtsvg_file
 $(call fetch_file,$(package),$($(package)_download_path),$($(package)_qtwebsockets_file_name),$($(package)_qtwebsockets_file_name),$($(package)_qtwebsockets_sha256_hash)) && \
 $(call fetch_file,$(package),$($(package)_download_path),$($(package)_qtmultimedia_file_name),$($(package)_qtmultimedia_file_name),$($(package)_qtmultimedia_sha256_hash)) && \
 $(call fetch_file,$(package),$($(package)_download_path),$($(package)_qtshadertools_file_name),$($(package)_qtshadertools_file_name),$($(package)_qtshadertools_sha256_hash)) && \
-$(call fetch_file,$(package),$($(package)_download_path),$($(package)_qtwayland_file_name),$($(package)_qtwayland_file_name),$($(package)_qtwayland_sha256_hash))
+$(call fetch_file,$(package),$($(package)_download_path),$($(package)_qtwayland_file_name),$($(package)_qtwayland_file_name),$($(package)_qtwayland_sha256_hash)) && \
+$(call fetch_file,$(package),$($(package)_download_path),$($(package)_qtdeclarative_file_name),$($(package)_qtdeclarative_file_name),$($(package)_qtdeclarative_sha256_hash))
 endef
 
 define $(package)_extract_cmds
@@ -185,6 +192,7 @@ define $(package)_extract_cmds
   echo "$($(package)_qtmultimedia_sha256_hash)  $($(package)_source_dir)/$($(package)_qtmultimedia_file_name)" >> $($(package)_extract_dir)/.$($(package)_file_name).hash && \
   echo "$($(package)_qtshadertools_sha256_hash)  $($(package)_source_dir)/$($(package)_qtshadertools_file_name)" >> $($(package)_extract_dir)/.$($(package)_file_name).hash && \
   echo "$($(package)_qtwayland_sha256_hash)  $($(package)_source_dir)/$($(package)_qtwayland_file_name)" >> $($(package)_extract_dir)/.$($(package)_file_name).hash && \
+  echo "$($(package)_qtdeclarative_sha256_hash)  $($(package)_source_dir)/$($(package)_qtdeclarative_file_name)" >> $($(package)_extract_dir)/.$($(package)_file_name).hash && \
   $(build_SHA256SUM) -c $($(package)_extract_dir)/.$($(package)_file_name).hash && \
   mkdir qtbase && \
   $(build_TAR) --no-same-owner --strip-components=1 -xf $($(package)_source) -C qtbase && \
@@ -199,7 +207,9 @@ define $(package)_extract_cmds
   mkdir qtshadertools && \
   $(build_TAR) --no-same-owner --strip-components=1 -xf $($(package)_source_dir)/$($(package)_qtshadertools_file_name) -C qtshadertools && \
   mkdir qtwayland && \
-  $(build_TAR) --no-same-owner --strip-components=1 -xf $($(package)_source_dir)/$($(package)_qtwayland_file_name) -C qtwayland
+  $(build_TAR) --no-same-owner --strip-components=1 -xf $($(package)_source_dir)/$($(package)_qtwayland_file_name) -C qtwayland && \
+  mkdir qtdeclarative && \
+  $(build_TAR) --no-same-owner --strip-components=1 -xf $($(package)_source_dir)/$($(package)_qtdeclarative_file_name) -C qtdeclarative
 endef
 
 define $(package)_preprocess_cmds
