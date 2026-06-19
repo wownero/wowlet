@@ -27,9 +27,10 @@ struct RestoreHeightLookup {
             return 1;
         }
 
-        int blockTime = 120;
-        int blocksPerDay = 720;
-        int blockCalcClearance = blocksPerDay * 5;
+        int blockTime = 300;       // wownero: 5-minute blocks (monero is 120s)
+        int blocksPerDay = 288;    // wownero: 86400/300 (monero is 720). Using monero's 720/120 here put
+        int blockCalcClearance = blocksPerDay * 5;   // post-table creation dates ~400k blocks into the FUTURE
+                                                     // => restore height > chain tip => wallet scans NOTHING => balance always 0
 
         QList<time_t> values = this->data.keys();
 
@@ -72,7 +73,7 @@ struct RestoreHeightLookup {
         }
 
         while (heightData < height) {
-            heightData += 720; // blocks per day
+            heightData += 288; // wownero blocks per day (monero is 720)
             timestamp += 86400; // seconds in day
         }
 

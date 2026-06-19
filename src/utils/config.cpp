@@ -97,12 +97,9 @@ static const QHash<Config::ConfigKey, ConfigDirective> configStrings = {
         {Config::writeStackTraceToDisk, {QS("writeStackTraceToDisk"), true}},
         {Config::writeRecentlyOpenedWallets, {QS("writeRecentlyOpenedWallets"), true}},
 
-        {Config::blockExplorers, {QS("blockExplorers"), QStringList{"https://xmrchain.net/tx/%txid%",
-                                                                    "https://moneroblocks.info/tx/%txid%",
-                                                                    "https://blockchair.com/monero/transaction/%txid%",
-                                                                    "http://blkchairbknpn73cfjhevhla7rkp4ed5gg2knctvv7it4lioy22defid.onion/monero/transaction/%txid%",
-                                                                    "http://127.0.0.1:31312/tx?id=%txid%"}}},
-        {Config::blockExplorer,{QS("blockExplorer"), "https://xmrchain.net/tx/%txid%"}},
+        {Config::blockExplorers, {QS("blockExplorers"), QStringList{"https://explore.wownero.com/tx/%txid%",
+                                                                    "https://explore.wowne.ro/tx/%txid%"}}},
+        {Config::blockExplorer,{QS("blockExplorer"), "https://explore.wownero.com/tx/%txid%"}},
         {Config::lastPath, {QS("lastPath"), QDir::homePath()}},
 
         {Config::URmsPerFragment, {QS("URmsPerFragment"), 80}},
