@@ -19,6 +19,7 @@ jobs:
         run: apt -y install curl bzip2 git cmake build-essential ccache libssl-dev libunbound-dev libboost-all-dev libzmq3-dev
                             libqrencode-dev qt6-base-dev qt6-svg-dev qt6-websockets-dev qt6-multimedia-dev
                             qt6-wayland-dev qt6-declarative-dev libzip-dev libsodium-dev libgcrypt20-dev libx11-xcb-dev
+                            qml6-module-qtquick-controls qml6-module-qtquick-layouts qml6-module-qtqml-workerscript qml6-module-qtquick-window
                             protobuf-compiler libprotobuf-dev libhidapi-dev libzxing-dev libusb-dev
                             libusb-1.0-0-dev
       - name: configure git
@@ -53,7 +54,8 @@ jobs:
           chmod +x linuxdeploy linuxdeploy-plugin-qt
           export APPIMAGE_EXTRACT_AND_RUN=1
           export QMAKE="$(command -v qmake6 || echo /usr/bin/qmake6)"
-          export EXTRA_QT_PLUGINS="svg;multimedia"
+          export EXTRA_QT_PLUGINS="svg;multimedia;tls"
+          export QML_SOURCES_PATHS="$PWD/src/assets/qml"
           export PATH="$PWD:$PATH"
           ./linuxdeploy --appdir AppDir --plugin qt \
             -d AppDir/usr/share/applications/wowlet.desktop \

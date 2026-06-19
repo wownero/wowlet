@@ -7,7 +7,7 @@ Rectangle {
     color: "#181725"
     width: 980
     height: 480
-    property variant buffer: []
+    property var buffer: []
     property int bufferMaxLength: 12
     // state:      0:idle 1:startup 2:syncing 3:mining
     signal startMining();
@@ -638,8 +638,8 @@ Rectangle {
         onTriggered: {
             if(Math.random() >= 0.5) return;
             if(bubble.visible) return;
-            root.dogBubbleRemoval.stop();
-            root.dogBubbleRemoval.start();
+            dogBubbleRemoval.stop();
+            dogBubbleRemoval.start();
 
             var msg = root.bubbleMessage();
 
