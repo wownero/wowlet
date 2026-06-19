@@ -76,6 +76,7 @@ public:
         runLocalNode,
         pruneBlockchain,
         wownerodPath,
+        broadcastOverTor,
 
         // Network -> Proxy
         proxy,

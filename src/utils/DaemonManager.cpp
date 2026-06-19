@@ -77,6 +77,20 @@ void DaemonManager::start() {
     if (conf()->get(Config::pruneBlockchain).toBool())
         arguments << "--prune-blockchain";
 
+    // wowlet: broadcast our OWN txs through Tor — hides the originating IP (the embedded node already
+    // gives us scan/receive privacy; this closes the send side). Sync stays on clearnet for speed.
+    // wownerod queues local txs until the proxy is reachable, so it tolerates Tor still bootstrapping.
+    // Only when Tor is actually bundled (HAS_TOR_BIN) — --tx-proxy is exclusive, so without a running
+    // Tor it would silently stall broadcasts. Builds without embedded Tor fall back to clearnet relay.
+#if defined(HAS_TOR_BIN)
+    if (conf()->get(Config::broadcastOverTor).toBool()) {
+        quint16 torPort = conf()->get(Config::useLocalTor).toBool()
+                            ? conf()->get(Config::socks5Port).toString().toUShort()
+                            : conf()->get(Config::torManagedPort).toString().toUShort();
+        arguments << "--tx-proxy" << QString("tor,127.0.0.1:%1,16").arg(torPort);
+    }
+#endif
+
     qDebug() << QString("Starting wownerod: %1 %2").arg(this->daemonPath, arguments.join(" "));
 
     m_process->start(this->daemonPath, arguments);
