@@ -59,11 +59,20 @@ jobs:
           export EXTRA_QT_PLUGINS="svg;multimedia;tls"
           export QML_SOURCES_PATHS="$PWD/src/assets/qml"
           export PATH="$PWD:$PATH"
+          # Populate AppDir (libs + Qt plugins + QML modules) — no --output yet, so we can patch QML first.
           ./linuxdeploy --appdir AppDir --plugin qt \
             -d AppDir/usr/share/applications/wowlet.desktop \
-            -i AppDir/usr/share/icons/hicolor/256x256/apps/wowlet.png \
-            --output appimage
-          mv *.AppImage wowlet-x86_64.AppImage 2>/dev/null || true
+            -i AppDir/usr/share/icons/hicolor/256x256/apps/wowlet.png
+          # qmlimportscanner doesn't follow qmldir `depends`, so QtQuick's transitive QtQml.WorkerScript
+          # (+ QtQml.Models) get skipped. Copy the whole installed QtQml tree in explicitly.
+          QMLDIR=$(qmake6 -query QT_INSTALL_QML)
+          mkdir -p AppDir/usr/qml
+          cp -rn "$QMLDIR/QtQml" AppDir/usr/qml/ 2>/dev/null || true
+          ls AppDir/usr/qml/QtQml/ | sed 's/^/  bundled QtQml submodule: /'
+          # Package (linuxdeploy already wrote AppRun + .desktop + .DirIcon into AppDir root).
+          curl -sL -o appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+          ARCH=x86_64 ./appimagetool AppDir wowlet-x86_64.AppImage
           ls -la wowlet-x86_64.AppImage
       - name: upload wowlet AppImage
         uses: actions/upload-artifact@v4
