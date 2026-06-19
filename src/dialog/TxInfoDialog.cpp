@@ -139,7 +139,7 @@ void TxInfoDialog::setData(const TransactionRow &tx) {
 
 
     if (tx.confirmationsRequired() > tx.confirmations) {
-        bool mandatoryLock = tx.confirmationsRequired() == 10;
+        bool mandatoryLock = tx.confirmationsRequired() == 4;
         QString confsRequired = QString::number(tx.confirmationsRequired() - tx.confirmations);
         ui->label_lock->setText(QString("Lock: Outputs become spendable in %1 blocks (%2)").arg(confsRequired, mandatoryLock ? "consensus rule" : "specified by sender"));
     } else {

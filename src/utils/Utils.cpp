@@ -372,13 +372,13 @@ bool portOpen(const QString &hostname, quint16 port) { // TODO: this call should
 quint16 getDefaultRpcPort(NetworkType::Type type) {
     switch (type) {
         case NetworkType::Type::MAINNET:
-            return 18081;
+            return 34568;
         case NetworkType::Type::TESTNET:
             return 28081;
         case NetworkType::Type::STAGENET:
             return 38081;
     }
-    return 18081;
+    return 34568;
 }
 
 bool isTorsocks() {

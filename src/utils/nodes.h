@@ -60,7 +60,7 @@ struct FeatherNode {
             return;
 
         if (url.port() == -1)
-            url.setPort(18081);
+            url.setPort(34568);
     };
 
     int height;

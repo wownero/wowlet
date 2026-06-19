@@ -39,7 +39,7 @@ QString TransactionRow::displayFee() const
 
 quint64 TransactionRow::confirmationsRequired() const
 {
-    return (blockHeight < unlockTime) ? unlockTime - blockHeight : 10;
+    return (blockHeight < unlockTime) ? unlockTime - blockHeight : 4;
 }
 
 QString TransactionRow::date() const

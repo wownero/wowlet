@@ -69,7 +69,7 @@ static const QHash<Config::ConfigKey, ConfigDirective> configStrings = {
         {Config::pruneBlockchain,{QS("pruneBlockchain"), false}}, // full archival by default
         {Config::wownerodPath,{QS("wownerodPath"), ""}},          // optional override; bundled by default
         {Config::broadcastOverTor,{QS("broadcastOverTor"), true}},// wowlet: --tx-proxy our txs through Tor (hide originating IP)
-        {Config::amountPrecision, {QS("amountPrecision"), 12}},
+        {Config::amountPrecision, {QS("amountPrecision"), 11}},
         {Config::dateFormat, {QS("dateFormat"), "yyyy-MM-dd"}},
         {Config::timeFormat, {QS("timeFormat"), "HH:mm"}},
         {Config::balanceDisplay, {QS("balanceDisplay"), Config::BalanceDisplay::spendablePlusUnconfirmed}},
@@ -124,7 +124,7 @@ static const QHash<Config::ConfigKey, ConfigDirective> configStrings = {
         {Config::useLocalTor, {QS("useLocalTor"), false}},
         {Config::initSyncThreshold, {QS("initSyncThreshold"), 360}},
 
-        {Config::enabledPlugins, {QS("enabledPlugins"), QStringList{"tickers", "crowdfunding", "revuo", "calc"}}},
+        {Config::enabledPlugins, {QS("enabledPlugins"), QStringList{"tickers", "calc"}}},
         {Config::restartRequired, {QS("restartRequired"), false}},
 
         {Config::tickers, {QS("tickers"), QStringList{"WOW", "BTC", "WOW/BTC"}}},

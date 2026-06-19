@@ -111,7 +111,7 @@
       <item>
        <widget class="QLabel" name="label_nodeDetected">
         <property name="text">
-         <string>wowlet detected a local node on port 18081.</string>
+         <string>wowlet detected a local node on port 34568.</string>
         </property>
        </widget>
       </item>
@@ -178,10 +178,10 @@
         <item row="0" column="1">
          <widget class="QLineEdit" name="line_customNode">
           <property name="text">
-           <string>127.0.0.1:18081</string>
+           <string>127.0.0.1:34568</string>
           </property>
           <property name="placeholderText">
-           <string>127.0.0.1:18081</string>
+           <string>127.0.0.1:34568</string>
           </property>
          </widget>
         </item>

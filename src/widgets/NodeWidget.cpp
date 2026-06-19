@@ -153,7 +153,7 @@ void NodeWidget::onCustomAddClicked(){
     }
 
     bool ok;
-    QString text = QInputDialog::getMultiLineText(this, "Add custom node(s).", "One node per line\nE.g: user:password@127.0.0.1:18081", currentNodesText, &ok);
+    QString text = QInputDialog::getMultiLineText(this, "Add custom node(s).", "One node per line\nE.g: user:password@127.0.0.1:34568", currentNodesText, &ok);
     if (!ok || text.isEmpty()) {
         return;
     }

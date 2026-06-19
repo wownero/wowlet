@@ -19,7 +19,7 @@ BalanceDialog::BalanceDialog(QWidget *parent, Wallet *wallet)
 
     connect(m_wallet, &Wallet::balanceUpdated, this, &BalanceDialog::updateBalance);
 
-    ui->label_unconfirmed_help->setHelpText("Unconfirmed balance", "Outputs require 10 confirmations before they become spendable. "
+    ui->label_unconfirmed_help->setHelpText("Unconfirmed balance", "Outputs require 4 confirmations before they become spendable. "
                                             "This will take 20 minutes on average.", "balance");
 
     ui->label_unconfirmed->setFont(Utils::getMonospaceFont());

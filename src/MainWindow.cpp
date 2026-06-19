@@ -1719,7 +1719,7 @@ void MainWindow::onTxPoolBacklog(const QVector<quint64> &backlog, quint64 origin
                                                 QString("There is a backlog of %1 blocks (≈ %2 minutes) in the transaction pool "
                                                         "at the maximum automatic fee level.\n\n"
                                                         "Do you want to increase the fee for this transaction?")
-                                                        .arg(QString::number(backlog[1]), QString::number(backlog[1] * 2)));
+                                                        .arg(QString::number(backlog[1]), QString::number(backlog[1] * 5)));
             if (button == QMessageBox::Yes) {
                 feeLevel = 3;
             }

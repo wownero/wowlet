@@ -222,7 +222,7 @@ void SendWidget::sendClicked() {
     }
 
     if (unlocked_balance == 0) {
-        Utils::showError(this, "Unable to create transaction", QString("No spendable balance.\n\n%1 WOW becomes spendable within 10 blocks (~20 minutes).").arg(WalletManager::displayAmount(total_balance - unlocked_balance)), {"Wait for more balance to unlock.", "Click 'Help' to learn more about how balance works."}, "balance");
+        Utils::showError(this, "Unable to create transaction", QString("No spendable balance.\n\n%1 WOW becomes spendable within 4 blocks (~20 minutes).").arg(WalletManager::displayAmount(total_balance - unlocked_balance)), {"Wait for more balance to unlock.", "Click 'Help' to learn more about how balance works."}, "balance");
         return;
     }
 
