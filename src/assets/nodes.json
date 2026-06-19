@@ -14,22 +14,10 @@
       "zao3w6isidntdbnyee5ufs7fyzmv7wzchpw32i3uo5eldjwmo4bxg2qd.onion:34568"
     ],
     "clearnet": [
-      "global.wownodes.com:34568",
-      "super.fast.node.xmr.pm:34568",
-      "node.wownero.club:34568",
-      "node.suchwow.xyz:34568",
-      "eu-west-1.wow.xmr.pm:34568",
-      "eu-west-2.wow.xmr.pm:34568",
-      "eu-west-3.wow.xmr.pm:34568",
-      "eu-west-4.wow.xmr.pm:34568",
-      "eu-west-5.wow.xmr.pm:34568",
-      "eu-west-6.wow.xmr.pm:34568",
-      "na-west-1.wow.xmr.pm:34568",
-      "much.wow.such.money:34568",
-      "very.wow.such.money:34568",
-      "169.119.33.174:34568",
-      "wow.bot.tips:34568",
-      "idontwanttogototoronto.wow.fail:34568"
+      "node2.monerodevs.org:34568",
+      "node3.monerodevs.org:34568",
+      "spippolatori.it:34568",
+      "wownerod.foolsump.com:34568"
     ]
   },
   "stagenet": {

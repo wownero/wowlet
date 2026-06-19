@@ -130,6 +130,11 @@ void Nodes::loadConfig() {
     }
 
     QStringList websocketNodes = m_nodes.getNodes(constants::networkType, NodeList::ws);
+    // wowlet: the websocket node-discovery server is disabled (no wownero equivalent), so this cached list
+    // never refreshes and may be stale or polluted with monero nodes from an earlier build. Drop it so the
+    // bundled wownero nodes.json below becomes the managed list.
+    if (conf()->get(Config::disableWebsocket).toBool())
+        websocketNodes.clear();
     for (const auto &node : websocketNodes) {
         FeatherNode wsNode{node};
         wsNode.custom = false;
