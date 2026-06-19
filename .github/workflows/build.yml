@@ -40,7 +40,9 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DWITH_SCANNER=OFF -DWOWNEROD_DIR=/tmp/wownerod-embed ..
+          # ARCH=x86-64: portable generic baseline. NEVER 'native' for a release — the CI runner's
+          # CPU (often newer than users') would bake in unsupported instructions → SIGILL on launch.
+          cmake -DWITH_SCANNER=OFF -DARCH=x86-64 -DWOWNEROD_DIR=/tmp/wownerod-embed ..
           cmake --build . -j $(nproc)
       - name: package AppImage
         run: |
