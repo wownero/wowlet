@@ -121,3 +121,85 @@ jobs:
           name: wowlet-x86_64-linux-AppImage
           path: wowlet-x86_64.AppImage
           if-no-files-found: error
+
+  build-windows-mingw:
+    name: "Windows x86_64 (mingw cross, depends)"
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:24.04
+    env:
+      HOST: x86_64-w64-mingw32
+    steps:
+      - name: update apt
+        run: apt update
+      - name: install dependencies
+        # depends cross-build deps: the mingw posix cross-compiler + native build tools depends needs.
+        # NO host Qt6 here (unlike the AppImage job) — depends builds a STATIC Qt6 for mingw itself.
+        run: |
+          apt -y install curl ca-certificates bzip2 xz-utils unzip zip git cmake build-essential ccache \
+            python3 perl pkg-config g++-mingw-w64-x86-64-posix gcc-mingw-w64-x86-64-posix \
+            autoconf automake libtool gettext bison
+      - name: select posix mingw alternatives
+        # mingw32.mk wants the -posix threading variant (std::thread/mutex/cv need it).
+        run: |
+          update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+          update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
+      - name: configure git
+        run: git config --global --add safe.directory '*'
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      # depends is the slow part (static Qt6/boost/openssl/tor from source). Cache the source tarballs
+      # and the compiled-package cache so only the first run pays the ~1h cost; warm runs are minutes.
+      - name: cache depends sources
+        uses: actions/cache@v4
+        with:
+          path: contrib/depends/sources
+          key: depends-sources-${{ hashFiles('contrib/depends/packages/*') }}
+      - name: cache depends built (mingw)
+        uses: actions/cache@v4
+        with:
+          path: contrib/depends/built
+          key: depends-built-mingw32-${{ hashFiles('contrib/depends/packages/*', 'contrib/depends/hosts/*', 'contrib/depends/toolchain.cmake.in') }}
+      - name: build depends (static Qt6 + tor + boost + openssl for mingw)
+        run: make -C contrib/depends HOST="$HOST" -j"$(nproc)"
+      - name: fetch wownerod.exe to embed
+        run: |
+          mkdir -p /tmp/wownerod-embed
+          curl -L -o /tmp/wownero-win.zip \
+            https://github.com/wownero/wownero-codeberg-mirror/releases/download/v0.11.4.0/wownero-x86_64-w64-mingw32-v0.11.4.0.zip
+          # -j flattens the versioned subdir so wownerod.exe is a DIRECT child (WownerodQrcGenerator
+          # globs ${WOWNEROD_DIR}/* non-recursively).
+          unzip -j /tmp/wownero-win.zip 'wownero-x86_64-w64-mingw32-v0.11.4.0/wownerod.exe' -d /tmp/wownerod-embed
+          ls -la /tmp/wownerod-embed
+      - name: build wowlet.exe
+        run: |
+          mkdir build && cd build
+          # ARCH=x86-64: portable baseline. wownero's CMake defaults ARCH=native, which under a cross
+          # compiler bakes the CI runner's instructions into the Windows binary -> SIGILL on older CPUs.
+          cmake --toolchain "$GITHUB_WORKSPACE/contrib/depends/$HOST/share/toolchain.cmake" \
+            -DARCH=x86-64 \
+            -DWITH_SCANNER=OFF \
+            -DCHECK_UPDATES=OFF \
+            -DTOR_INSTALLED=On \
+            -DFEATHER_TARGET_TRIPLET="$HOST" \
+            -DWOWNEROD_DIR=/tmp/wownerod-embed \
+            ..
+          cmake --build . -j"$(nproc)"
+          ls -la bin/
+      - name: package zip
+        # Fully static build: just wowlet.exe + the depends-built tor.exe + license. No Qt/runtime DLLs.
+        run: |
+          DISTDIR=wowlet-x86_64-w64-mingw32
+          mkdir -p "$DISTDIR/tor"
+          cp build/bin/feather.exe "$DISTDIR/wowlet.exe"
+          cp "contrib/depends/$HOST/Tor/tor.exe" "$DISTDIR/tor/tor.exe"
+          (cp LICENSE "$DISTDIR/LICENSE.txt" 2>/dev/null || cp COPYING "$DISTDIR/LICENSE.txt" 2>/dev/null) || true
+          (cd "$DISTDIR" && find . -type f | sort | zip -X "../wowlet-x86_64-windows.zip" -@)
+          unzip -l wowlet-x86_64-windows.zip
+      - name: upload wowlet Windows zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: wowlet-x86_64-windows
+          path: wowlet-x86_64-windows.zip
+          if-no-files-found: error
