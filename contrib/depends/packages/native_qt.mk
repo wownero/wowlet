@@ -83,7 +83,9 @@ $(package)_config_opts += -no-feature-sessionmanager
 $(package)_config_opts += -no-feature-spatialaudio
 $(package)_config_opts += -no-feature-sql
 $(package)_config_opts += -no-feature-syntaxhighlighter
-$(package)_config_opts += -no-feature-testlib
+# wowlet: keep testlib (QtTest) ON in the HOST Qt. The cross qtdeclarative builds tools/qmltestrunner
+# (part of QtQuickTest, which needs testlib) and requires the matching HOST tool; -no-feature-testlib
+# left the host without qmltestrunner, failing "Configuring qtdeclarative" on the cross build.
 $(package)_config_opts += -no-feature-textmarkdownwriter
 $(package)_config_opts += -no-feature-textodfwriter
 $(package)_config_opts += -no-feature-topleveldomain
