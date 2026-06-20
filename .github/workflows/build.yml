@@ -128,15 +128,17 @@ jobs:
     env:
       HOST: x86_64-w64-mingw32
     steps:
-      - name: free disk space
-        # depends unpacks + builds Qt6/boost/openssl from source — too big for the runner's default
-        # free /. Drop the GitHub-hosted bloat (dotnet/android/ghc/CodeQL/swift) to free ~25G first.
+      - name: free disk space + add swap
+        # depends unpacks + builds Qt6/boost/openssl from source. Free / of GitHub bloat
+        # (dotnet/android/ghc/CodeQL) AND add swap — 16G RAM alone OOMs the parallel Qt6 compile.
         run: |
-          echo "before:"; df -h / | tail -1
+          echo "disk before:"; df -h / | tail -1
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/lib/android \
                       /opt/hostedtoolcache/CodeQL /usr/share/swift 2>/dev/null || true
           sudo apt-get clean
-          echo "after:"; df -h / | tail -1
+          echo "disk after:"; df -h / | tail -1
+          sudo fallocate -l 10G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+          echo "mem:"; free -h
       - name: update apt
         run: sudo apt-get update
       - name: install dependencies
@@ -169,7 +171,8 @@ jobs:
           path: contrib/depends/built
           key: depends-built-mingw32-${{ hashFiles('contrib/depends/packages/*', 'contrib/depends/hosts/*', 'contrib/depends/toolchain.cmake.in') }}
       - name: build depends (static Qt6 + tor + boost + openssl for mingw)
-        run: make -C contrib/depends HOST="$HOST" -j"$(nproc)"
+        # -j2 not -j(nproc): the parallel static Qt6 compile OOMs the 16G runner at -j4. Slower but safe.
+        run: make -C contrib/depends HOST="$HOST" -j2
       - name: fetch wownerod.exe to embed
         run: |
           mkdir -p /tmp/wownerod-embed
@@ -192,7 +195,7 @@ jobs:
             -DFEATHER_TARGET_TRIPLET="$HOST" \
             -DWOWNEROD_DIR=/tmp/wownerod-embed \
             ..
-          cmake --build . -j"$(nproc)"
+          cmake --build . -j2
           ls -la bin/
       - name: package zip
         # Fully static build: just wowlet.exe + the depends-built tor.exe + license. No Qt/runtime DLLs.
