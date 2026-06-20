@@ -29,7 +29,14 @@ void TorInfoDialog::onLogsUpdated() {
 }
 
 void TorInfoDialog::onConnectionStatusChanged(bool connected) {
-    if (!torManager()->isStarted()) {
+    // wowlet: when we reuse an external/system Tor already listening on the configured SOCKS port we
+    // never start our own process, so isStarted() is false. Reporting "Not running" then looks broken
+    // even though traffic IS flowing over that external Tor — surface the real state instead.
+    if (torManager()->isLocalTor()) {
+        ui->icon_connectionStatus->setPixmap(QPixmap(connected ? ":/assets/images/status_connected.svg" : ":/assets/images/status_disconnected.svg").scaledToWidth(16, Qt::SmoothTransformation));
+        ui->label_testConnectionStatus->setText(connected ? "Connected (using external Tor)" : "External Tor not reachable");
+    }
+    else if (!torManager()->isStarted()) {
         ui->icon_connectionStatus->setPixmap(QPixmap(":/assets/images/status_offline.svg").scaledToWidth(16, Qt::SmoothTransformation));
         ui->label_testConnectionStatus->setText("Not running");
     }

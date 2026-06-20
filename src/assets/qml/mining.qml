@@ -250,9 +250,9 @@ Rectangle {
                             anchors.leftMargin: 6
                             anchors.right: parent.right
                             anchors.rightMargin: 8
-                            anchors.topMargin: 12
+                            anchors.topMargin: 4
 
-                            height: 78
+                            height: 60
                             spacing: 16
 
                             ColumnLayout {
