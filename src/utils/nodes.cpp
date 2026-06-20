@@ -12,6 +12,10 @@
 #include "constants.h"
 #include "utils/WebsocketNotifier.h"
 #include "utils/TorManager.h"
+#include "utils/Networking.h"
+#include <QJsonArray>
+#include <QNetworkReply>
+#include <QTimer>
 
 bool NodeList::addNode(const QString &node, NetworkType::Type networkType, NodeList::Type source) {
     // We can't obtain references to QJsonObjects...
@@ -107,6 +111,16 @@ Nodes::Nodes(QObject *parent, Wallet *wallet)
 
     this->loadConfig();
     connect(websocketNotifier(), &WebsocketNotifier::NodesReceived, this, &Nodes::onWSNodesReceived);
+
+    // wowlet: the feather websocket is disabled (no WOW backend), so pull the live remote-node list from
+    // wownero.org/nodes instead — routed over Tor when Tor is active, with the bundled list (already loaded
+    // by loadConfig above) as the fallback. Refreshed hourly.
+    if (conf()->get(Config::disableWebsocket).toBool()) {
+        QTimer::singleShot(4000, this, &Nodes::fetchRemoteNodeList);
+        auto *refresh = new QTimer(this);
+        connect(refresh, &QTimer::timeout, this, &Nodes::fetchRemoteNodeList);
+        refresh->start(60 * 60 * 1000);
+    }
 
     if (m_wallet) {
         connect(m_wallet, &Wallet::walletRefreshed, this, &Nodes::onWalletRefreshed);
@@ -405,6 +419,45 @@ void Nodes::onWSNodesReceived(QList<FeatherNode> &nodes) {
 
     this->resetLocalState();
     this->updateModels();
+}
+
+void Nodes::fetchRemoteNodeList() {
+    if (conf()->get(Config::offlineMode).toBool())
+        return;
+    if (!m_wowNet)
+        m_wowNet = new Networking(this);
+
+    QNetworkReply *reply = m_wowNet->getJson(this, "https://wownero.org/nodes/api/nodes/wallet");
+    if (!reply)
+        return;
+
+    connect(reply, &QNetworkReply::finished, this, [this, reply] {
+        reply->deleteLater();
+        if (reply->error() != QNetworkReply::NoError) {
+            qWarning() << "wownero node feed unreachable, keeping bundled list:" << reply->errorString();
+            return;
+        }
+        QJsonObject root = QJsonDocument::fromJson(reply->readAll()).object();
+        const int best = root.value("height_best").toInt();
+        QList<FeatherNode> nodes;
+        for (const auto &v : root.value("nodes").toArray()) {
+            QJsonObject o = v.toObject();
+            // wowlet talks plain HTTP to daemons (over Tor); skip SSL-only nodes it can't reach.
+            if (o.value("scheme").toString() == "https")
+                continue;
+            const QString host = o.value("host").toString();
+            if (host.isEmpty())
+                continue;
+            const QString addr = QString("%1:%2").arg(host, QString::number(o.value("port").toInt()));
+            nodes.append(FeatherNode(addr, o.value("height").toInt(), best, true));
+        }
+        if (nodes.isEmpty()) {
+            qWarning() << "wownero node feed returned no usable (http) nodes; keeping bundled list";
+            return;
+        }
+        qInfo() << "wownero node feed: loaded" << nodes.count() << "remote nodes";
+        this->onWSNodesReceived(nodes);
+    });
 }
 
 void Nodes::onNodeSourceChanged(NodeSource nodeSource) {

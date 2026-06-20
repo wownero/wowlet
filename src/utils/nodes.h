@@ -143,6 +143,8 @@ struct FeatherNode {
     }
 };
 
+class Networking;
+
 class Nodes : public QObject {
     Q_OBJECT
 
@@ -185,6 +187,7 @@ private:
 
     QList<FeatherNode> m_customNodes;
     QList<FeatherNode> m_websocketNodes;
+    Networking *m_wowNet = nullptr;   // wowlet: live remote-node feed from wownero.org/nodes
 
     FeatherNode m_connection;  // current active connection, if any
 
@@ -194,6 +197,7 @@ private:
     bool m_allowConnection = false;
 
     FeatherNode pickEligibleNode();
+    void fetchRemoteNodeList();   // wowlet: pull /nodes/api/nodes/wallet, replacing the disabled websocket
 
     bool useOnionNodes();
     bool useI2PNodes();
