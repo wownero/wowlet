@@ -125,25 +125,32 @@ jobs:
   build-windows-mingw:
     name: "Windows x86_64 (mingw cross, depends)"
     runs-on: ubuntu-latest
-    container:
-      image: ubuntu:24.04
     env:
       HOST: x86_64-w64-mingw32
     steps:
+      - name: free disk space
+        # depends unpacks + builds Qt6/boost/openssl from source — too big for the runner's default
+        # free /. Drop the GitHub-hosted bloat (dotnet/android/ghc/CodeQL/swift) to free ~25G first.
+        run: |
+          echo "before:"; df -h / | tail -1
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/lib/android \
+                      /opt/hostedtoolcache/CodeQL /usr/share/swift 2>/dev/null || true
+          sudo apt-get clean
+          echo "after:"; df -h / | tail -1
       - name: update apt
-        run: apt update
+        run: sudo apt-get update
       - name: install dependencies
         # depends cross-build deps: the mingw posix cross-compiler + native build tools depends needs.
         # NO host Qt6 here (unlike the AppImage job) — depends builds a STATIC Qt6 for mingw itself.
         run: |
-          apt -y install curl ca-certificates bzip2 xz-utils unzip zip git cmake build-essential ccache \
+          sudo apt-get -y install curl ca-certificates bzip2 xz-utils unzip zip git cmake build-essential ccache \
             python3 perl pkg-config g++-mingw-w64-x86-64-posix gcc-mingw-w64-x86-64-posix \
             autoconf automake libtool gettext bison
       - name: select posix mingw alternatives
         # mingw32.mk wants the -posix threading variant (std::thread/mutex/cv need it).
         run: |
-          update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
-          update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
+          sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+          sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
       - name: configure git
         run: git config --global --add safe.directory '*'
       - uses: actions/checkout@v4
