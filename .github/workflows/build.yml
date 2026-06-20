@@ -160,19 +160,35 @@ jobs:
           submodules: recursive
       # depends is the slow part (static Qt6/boost/openssl/tor from source). Cache the source tarballs
       # and the compiled-package cache so only the first run pays the ~1h cost; warm runs are minutes.
-      - name: cache depends sources
-        uses: actions/cache@v4
+      - name: restore depends sources cache
+        id: cache-sources
+        uses: actions/cache/restore@v4
         with:
           path: contrib/depends/sources
           key: depends-sources-${{ hashFiles('contrib/depends/packages/*') }}
-      - name: cache depends built (mingw)
-        uses: actions/cache@v4
+      - name: restore depends built cache (mingw)
+        id: cache-built
+        uses: actions/cache/restore@v4
         with:
           path: contrib/depends/built
           key: depends-built-mingw32-${{ hashFiles('contrib/depends/packages/*', 'contrib/depends/hosts/*', 'contrib/depends/toolchain.cmake.in') }}
       - name: build depends (static Qt6 + tor + boost + openssl for mingw)
         # -j2 not -j(nproc): the parallel static Qt6 compile OOMs the 16G runner at -j4. Slower but safe.
         run: make -C contrib/depends HOST="$HOST" -j2
+      # Save depends with if:always() so the expensive toolchain banks even when the LATER wowlet.exe
+      # build fails — actions/cache's auto post-save is skipped on job failure, which kept re-paying ~2.5h.
+      - name: save depends sources cache
+        if: always() && steps.cache-sources.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: contrib/depends/sources
+          key: depends-sources-${{ hashFiles('contrib/depends/packages/*') }}
+      - name: save depends built cache (mingw)
+        if: always() && steps.cache-built.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: contrib/depends/built
+          key: depends-built-mingw32-${{ hashFiles('contrib/depends/packages/*', 'contrib/depends/hosts/*', 'contrib/depends/toolchain.cmake.in') }}
       - name: fetch wownerod.exe to embed
         run: |
           mkdir -p /tmp/wownerod-embed
