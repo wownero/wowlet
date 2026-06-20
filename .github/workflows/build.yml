@@ -21,7 +21,7 @@ jobs:
                             qt6-wayland-dev qt6-declarative-dev libzip-dev libsodium-dev libgcrypt20-dev libx11-xcb-dev
                             qml6-module-qtquick qml6-module-qtquick-layouts qml6-module-qtquick-window qml6-module-qtqml-workerscript qml6-module-qtqml-models
                             protobuf-compiler libprotobuf-dev libhidapi-dev libzxing-dev libusb-dev
-                            libusb-1.0-0-dev
+                            libusb-1.0-0-dev patchelf
       - name: configure git
         run: git config --global --add safe.directory '*'
       - uses: actions/checkout@v4
@@ -36,13 +36,25 @@ jobs:
           find /tmp -name wownerod -type f -exec cp {} /tmp/wownerod-embed/ \;
           chmod +x /tmp/wownerod-embed/wownerod
           ls -la /tmp/wownerod-embed
+      - name: fetch tor to embed
+        run: |
+          mkdir -p /tmp/tor-embed
+          curl -L -o /tmp/teb.tgz \
+            https://archive.torproject.org/tor-package-archive/torbrowser/15.0/tor-expert-bundle-linux-x86_64-15.0.tar.gz
+          mkdir -p /tmp/teb && tar xzf /tmp/teb.tgz -C /tmp/teb
+          cp /tmp/teb/tor/tor /tmp/teb/tor/libssl.so.3 /tmp/teb/tor/libevent-2.1.so.7 /tmp/teb/tor/libcrypto.so.3 /tmp/tor-embed/
+          # expert-bundle tor has no rpath; point it (+ its libs) at $ORIGIN so the embedded copy finds
+          # its libs in the extract dir on any distro
+          for f in tor libssl.so.3 libevent-2.1.so.7 libcrypto.so.3; do patchelf --set-rpath '$ORIGIN' /tmp/tor-embed/$f; done
+          chmod +x /tmp/tor-embed/tor
+          ls -la /tmp/tor-embed
       - name: build
         run: |
           mkdir build
           cd build
           # ARCH=x86-64: portable generic baseline. NEVER 'native' for a release — the CI runner's
           # CPU (often newer than users') would bake in unsupported instructions → SIGILL on launch.
-          cmake -DWITH_SCANNER=OFF -DARCH=x86-64 -DWOWNEROD_DIR=/tmp/wownerod-embed ..
+          cmake -DWITH_SCANNER=OFF -DARCH=x86-64 -DWOWNEROD_DIR=/tmp/wownerod-embed -DTOR_DIR=/tmp/tor-embed -DTOR_VERSION=15.0 ..
           cmake --build . -j $(nproc)
       - name: package AppImage
         run: |
