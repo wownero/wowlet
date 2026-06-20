@@ -612,14 +612,10 @@ QList<FeatherNode> Nodes::websocketNodes() {
 
     QList<FeatherNode> nodes;
     for (const auto &node : m_websocketNodes) {
-        if (onionNode && !node.isOnion()) {
-            continue;
-        }
-
-        if (i2pNode && !node.isI2P()) {
-            continue;
-        }
-
+        // wowlet: wownero's public nodes are clearnet (there is effectively no onion node ecosystem), so
+        // keep clearnet nodes eligible in EVERY proxy mode — they're routed over Tor's SOCKS proxy when Tor
+        // is enabled, so still private; just not onion-only. Only hide onion/i2p nodes when the matching
+        // anonymity-network mode isn't active.
         if (!onionNode && node.isOnion()) {
             continue;
         }
