@@ -394,7 +394,7 @@ Rectangle {
                         anchors.fill: parent
                         text: {
                             if(mining.daemonMiningState === 0) {
-                                return "Press the pick-axe to start mining!";
+                                return "Press the pick-axe to start mining once your node is synced!";
                             } else {
                                 return "";
                             }

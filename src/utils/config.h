@@ -75,6 +75,7 @@ public:
         // Embedded node (wowlet)
         runLocalNode,
         pruneBlockchain,
+        nodeDataDir,
         wownerodPath,
         broadcastOverTor,
 

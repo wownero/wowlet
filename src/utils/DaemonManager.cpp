@@ -10,6 +10,7 @@
 #include <QRegularExpression>
 
 #include "utils/config.h"
+#include "utils/TorManager.h"
 #include "utils/Utils.h"
 
 DaemonManager::DaemonManager(QObject *parent)
@@ -63,15 +64,23 @@ void DaemonManager::start() {
         return;
     }
 
+    // wowlet: allow pointing the embedded node at an existing chain (e.g. ~/.wownero) to skip a full
+    // re-sync. Empty = the managed, isolated default. LMDB is single-writer, so the chosen dir must not
+    // be in use by another running wownerod.
+    QString dataDir = conf()->get(Config::nodeDataDir).toString().trimmed();
+    if (dataDir.isEmpty())
+        dataDir = this->blockchainDir;
+    QDir().mkpath(dataDir);
+
     QStringList arguments;
-    arguments << "--data-dir" << this->blockchainDir;
+    arguments << "--data-dir" << dataDir;
     arguments << "--rpc-bind-ip" << this->rpcHost;
     arguments << "--rpc-bind-port" << QString::number(this->rpcPort);
     arguments << "--p2p-bind-port" << QString::number(this->p2pPort);
     arguments << "--non-interactive";
     arguments << "--no-igd";                 // no UPnP port mapping
     arguments << "--out-peers" << "16";
-    arguments << "--log-file" << QDir(this->blockchainDir).filePath("wownerod.log");
+    arguments << "--log-file" << QDir(dataDir).filePath("wownerod.log");
 
     // Full archival by default (wownero's chain is small); prune is an explicit opt-in.
     if (conf()->get(Config::pruneBlockchain).toBool())
@@ -84,7 +93,10 @@ void DaemonManager::start() {
     // Tor it would silently stall broadcasts. Builds without embedded Tor fall back to clearnet relay.
 #if defined(HAS_TOR_BIN)
     if (conf()->get(Config::broadcastOverTor).toBool()) {
-        quint16 torPort = conf()->get(Config::useLocalTor).toBool()
+        // Use the Tor that's actually running, not the stored preference: a managed Tor listens on
+        // torManagedPort, an external/system Tor on socks5Port. (Reading Config::useLocalTor here picked
+        // the wrong port whenever wowlet fell back to a system Tor, so broadcasts silently stalled.)
+        quint16 torPort = torManager()->isLocalTor()
                             ? conf()->get(Config::socks5Port).toString().toUShort()
                             : conf()->get(Config::torManagedPort).toString().toUShort();
         arguments << "--tx-proxy" << QString("tor,127.0.0.1:%1,16").arg(torPort);
