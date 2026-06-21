@@ -229,3 +229,106 @@ jobs:
           name: wowlet-x86_64-windows
           path: wowlet-x86_64-windows.zip
           if-no-files-found: error
+
+  build-linux-cross:
+    name: "Linux ${{ matrix.arch }} (depends AppImage)"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            host: aarch64-linux-gnu
+            xcompiler: g++-aarch64-linux-gnu gcc-aarch64-linux-gnu
+            cmake_arch: armv8-a
+            wownerod: wownero-aarch64-linux-gnu-v0.11.4.0.tar.bz2
+          - arch: riscv64
+            host: riscv64-linux-gnu
+            xcompiler: g++-riscv64-linux-gnu gcc-riscv64-linux-gnu
+            cmake_arch: rv64gc
+            wownerod: wownero-riscv64-linux-gnu-v0.11.4.0.tar.bz2
+    env:
+      HOST: ${{ matrix.host }}
+    steps:
+      - name: free disk space + add swap
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/lib/android \
+                      /opt/hostedtoolcache/CodeQL /usr/share/swift 2>/dev/null || true
+          sudo apt-get clean
+          sudo fallocate -l 10G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+          df -h / | tail -1; free -h | head -2
+      - name: install dependencies
+        # depends builds static Qt6/tor/boost/openssl for the target; we supply the linux cross-compiler
+        # ($(host)-gcc) + squashfs-tools (mksquashfs) for the AppImage.
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install curl ca-certificates bzip2 xz-utils unzip git cmake build-essential ccache \
+            python3 perl pkg-config gperf squashfs-tools ${{ matrix.xcompiler }} \
+            autoconf automake libtool gettext bison
+      - name: configure git
+        run: git config --global --add safe.directory '*'
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: restore depends sources cache
+        id: cache-sources
+        uses: actions/cache/restore@v4
+        with:
+          path: contrib/depends/sources
+          key: depends-sources-${{ hashFiles('contrib/depends/packages/*') }}
+      - name: restore depends built cache
+        id: cache-built
+        uses: actions/cache/restore@v4
+        with:
+          path: contrib/depends/built
+          key: depends-built-${{ matrix.host }}-${{ hashFiles('contrib/depends/packages/*', 'contrib/depends/hosts/*', 'contrib/depends/toolchain.cmake.in') }}
+      - name: build depends (static Qt6 + tor + boost + openssl)
+        run: make -C contrib/depends HOST="$HOST" -j2
+      - name: save depends sources cache
+        if: always() && steps.cache-sources.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: contrib/depends/sources
+          key: depends-sources-${{ hashFiles('contrib/depends/packages/*') }}
+      - name: save depends built cache
+        if: always() && steps.cache-built.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: contrib/depends/built
+          key: depends-built-${{ matrix.host }}-${{ hashFiles('contrib/depends/packages/*', 'contrib/depends/hosts/*', 'contrib/depends/toolchain.cmake.in') }}
+      - name: fetch wownerod to embed
+        run: |
+          mkdir -p /tmp/wownerod-embed
+          curl -L -o /tmp/wownero.tar.bz2 \
+            https://github.com/wownero/wownero-codeberg-mirror/releases/download/v0.11.4.0/${{ matrix.wownerod }}
+          tar xjf /tmp/wownero.tar.bz2 -C /tmp
+          find /tmp -name wownerod -type f -exec cp {} /tmp/wownerod-embed/ \;
+          chmod +x /tmp/wownerod-embed/wownerod
+          ls -la /tmp/wownerod-embed
+      - name: build wowlet
+        run: |
+          mkdir build && cd build
+          # ARCH pinned (NOT wownero's native default — a cross compiler would bake the wrong ISA -> SIGILL).
+          cmake --toolchain "$GITHUB_WORKSPACE/contrib/depends/$HOST/share/toolchain.cmake" \
+            -DARCH=${{ matrix.cmake_arch }} \
+            -DWITH_SCANNER=OFF \
+            -DCHECK_UPDATES=OFF \
+            -DFEATHER_TARGET_TRIPLET="$HOST" \
+            -DTOR_DIR="$GITHUB_WORKSPACE/contrib/depends/$HOST/Tor" \
+            -DTOR_VERSION=0.4.9.6 \
+            -DWOWNEROD_DIR=/tmp/wownerod-embed \
+            ..
+          cmake --build . -j2
+          ls -la bin/
+      - name: package AppImage
+        # build-appimage.sh wraps build/bin/feather with the depends-built ${HOST}/runtime (cross-arch).
+        run: |
+          bash contrib/AppImage/build-appimage.sh
+          mv feather.AppImage "wowlet-${{ matrix.arch }}.AppImage"
+          ls -la "wowlet-${{ matrix.arch }}.AppImage"
+      - name: upload wowlet AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: wowlet-${{ matrix.arch }}-linux-AppImage
+          path: wowlet-${{ matrix.arch }}.AppImage
+          if-no-files-found: error

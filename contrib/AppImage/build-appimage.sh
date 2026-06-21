@@ -28,6 +28,6 @@ printf '\x00\x00\x00\x00' | dd conv=notrunc of=feather.squashfs bs=1 seek=$((0x8
 
 rm -f feather.AppImage
 
-cat /feather/contrib/depends/${HOST}/runtime >> feather.AppImage
+cat "${GITHUB_WORKSPACE:-/feather}/contrib/depends/${HOST}/runtime" >> feather.AppImage
 cat feather.squashfs >> feather.AppImage
 chmod a+x feather.AppImage
