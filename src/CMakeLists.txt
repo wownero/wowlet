@@ -274,6 +274,15 @@ if (DEPENDS)
     target_link_directories(feather PRIVATE "${LIB_DIR}")
 endif()
 
+# ICU_LIBRARIES is set by the monero/wownero submodule (its STATIC-build branch, ~CMakeLists.txt:1131:
+# `set(ICU_LIBRARIES icuio ... iconv)`) assuming depends ships ICU + libiconv — true for monero's own
+# depends, NOT feather's. And our cross-build's depends boost is --without-icu, so nothing references
+# ICU/iconv symbols: the link is vestigial. Drop it when cross-compiling (else the mingw link fails on
+# missing -licu*/-liconv). Native builds keep it — their system boost IS built against ICU.
+if(CMAKE_CROSSCOMPILING)
+    set(ICU_LIBRARIES "")
+endif()
+
 target_link_libraries(feather PRIVATE
         wallet_api
         epee
