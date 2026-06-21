@@ -263,7 +263,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get -y install curl ca-certificates bzip2 xz-utils unzip git cmake build-essential ccache \
-            python3 perl pkg-config gperf squashfs-tools ${{ matrix.xcompiler }} \
+            python3 perl pkg-config gperf squashfs-tools meson ninja-build ${{ matrix.xcompiler }} \
             autoconf automake libtool gettext bison
       - name: configure git
         run: git config --global --add safe.directory '*'
