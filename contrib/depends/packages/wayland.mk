@@ -19,8 +19,7 @@ define $(package)_preprocess_cmds
 endef
 
 define $(package)_config_cmds
-  echo "=== wayland-scanner in build_prefix ===" ; find $(build_prefix) -name 'wayland-scanner*' 2>/dev/null ; echo "=== end ==="
-  PKG_CONFIG_LIBDIR="$(host_prefix)/lib/pkgconfig:$(build_prefix)/lib/pkgconfig:$(build_prefix)/share/pkgconfig" PKG_CONFIG_PATH="$(build_prefix)/lib/pkgconfig:$(build_prefix)/share/pkgconfig" PKG_CONFIG_PATH_FOR_BUILD="$(build_prefix)/lib/pkgconfig:$(build_prefix)/share/pkgconfig" meson setup --cross-file toolchain.txt build -Ddtd_validation=false -Ddocumentation=false -Dprefer_static=true -Ddefault_library=static -Dtests=false -Dscanner=false
+  find $(build_prefix) -name 'wayland-scanner*' -print 2>/dev/null ; PKG_CONFIG_LIBDIR="$(host_prefix)/lib/pkgconfig:$(build_prefix)/lib/pkgconfig:$(build_prefix)/share/pkgconfig" PKG_CONFIG_PATH="$(build_prefix)/lib/pkgconfig:$(build_prefix)/share/pkgconfig" PKG_CONFIG_PATH_FOR_BUILD="$(build_prefix)/lib/pkgconfig:$(build_prefix)/share/pkgconfig" meson setup --cross-file toolchain.txt build -Ddtd_validation=false -Ddocumentation=false -Dprefer_static=true -Ddefault_library=static -Dtests=false -Dscanner=false
 endef
 
 define $(package)_build_cmds
