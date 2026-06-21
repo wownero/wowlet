@@ -19,7 +19,7 @@ define $(package)_preprocess_cmds
 endef
 
 define $(package)_config_cmds
-  meson setup --cross-file toolchain.txt build -Dxkb-config-root=/usr/share/X11/xkb -Dxkb-config-extra-path=/app/share/X11/xkb
+  meson setup --cross-file toolchain.txt build -Dxkb-config-root=/usr/share/X11/xkb -Dxkb-config-extra-path=/app/share/X11/xkb -Dxkb-config-unversioned-extensions-path=/usr/share/X11/xkb.d -Dxkb-config-versioned-extensions-path=/usr/share/X11/xkb.d
 endef
 
 define $(package)_build_cmds
