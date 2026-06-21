@@ -19,7 +19,7 @@ define $(package)_preprocess_cmds
 endef
 
 define $(package)_config_cmds
-  PKG_CONFIG_LIBDIR="$(host_prefix)/lib/pkgconfig:$(build_prefix)/lib/pkgconfig" PKG_CONFIG_PATH="$(build_prefix)/lib/pkgconfig" meson setup --cross-file toolchain.txt build -Ddtd_validation=false -Ddocumentation=false -Dprefer_static=true -Ddefault_library=static -Dtests=false -Dscanner=false
+  PKG_CONFIG_LIBDIR="$(host_prefix)/lib/pkgconfig:$(build_prefix)/lib/pkgconfig" PKG_CONFIG_PATH="$(build_prefix)/lib/pkgconfig" PKG_CONFIG_PATH_FOR_BUILD="$(build_prefix)/lib/pkgconfig" meson setup --cross-file toolchain.txt build -Ddtd_validation=false -Ddocumentation=false -Dprefer_static=true -Ddefault_library=static -Dtests=false -Dscanner=false
 endef
 
 define $(package)_build_cmds

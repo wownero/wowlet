@@ -4,6 +4,7 @@ cpp = '@cxx@'
 ar = '@ar@'
 strip = '@strip@'
 pkgconfig = 'pkg-config'
+wayland-scanner = '@build_prefix@/bin/wayland-scanner'
 
 [host_machine]
 system = 'linux'
