@@ -237,6 +237,7 @@ jobs:
   build-linux-cross:
     name: "Linux ${{ matrix.arch }} (depends AppImage)"
     runs-on: ubuntu-latest
+    continue-on-error: true   # arm64/riscv64 deferred to v5.0.1; must not fail the release run
     strategy:
       fail-fast: false
       matrix:
