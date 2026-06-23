@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // SPDX-FileCopyrightText: The Monero Project
 
+#include <QQuickWindow>
 #include <QSslSocket>
 
 #include "Application.h"
@@ -87,6 +88,14 @@ if (AttachConsole(ATTACH_PARENT_PROCESS)) {
     // PassThrough results in muddy text
     QApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::Round);
 #endif
+
+    // wowlet: force the QtQuick scene graph to the software renderer. The app's only QtQuick surface
+    // (the Mining tab's QQuickWidget) otherwise drives the default RHI/GL path, which faults (0xc0000005)
+    // on broken-GL environments — notably VirtualBox's VMSVGA — crashing the whole app and orphaning the
+    // embedded node. The mining widget is small + static, so software rendering costs nothing meaningful
+    // and guarantees no GL-init crash on any user's hardware. (Confirmed in a VMSVGA Win11 VM: the software
+    // backend launches cleanly where the default GL backend crashed.)
+    QQuickWindow::setGraphicsApi(QSGRendererInterface::Software);
 
     Application app(argc, argv);
 

@@ -6,10 +6,21 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QDirIterator>
+#include <QEventLoop>
 #include <QFileInfo>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 #include <QRegularExpression>
+#include <QUrl>
 
+#include "constants.h"
+#include "utils/AppData.h"
+#include "utils/ChildProcessGuard.h"   // wowlet: OS-level die-with-parent for the embedded node
 #include "utils/config.h"
+#include "utils/networktype.h"
 #include "utils/TorManager.h"
 #include "utils/Utils.h"
 
@@ -25,6 +36,11 @@ DaemonManager::DaemonManager(QObject *parent)
     connect(m_process, &QProcess::readyReadStandardOutput, this, &DaemonManager::handleProcessOutput);
     connect(m_process, &QProcess::errorOccurred, this, &DaemonManager::handleProcessError);
     connect(m_process, &QProcess::stateChanged, this, &DaemonManager::onStateChanged);
+
+    // wowlet: SIGKILL wownerod if wowlet dies (Unix); Windows binds it to a kill-on-close job post-start.
+    ChildProcessGuard::installPreStart(m_process);
+    // wowlet: graceful stop on any clean quit, not just the last-window-closed path (flushes LMDB).
+    connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, [this]{ this->stop(); });
 }
 
 QPointer<DaemonManager> DaemonManager::m_instance(nullptr);
@@ -51,11 +67,22 @@ void DaemonManager::start() {
         return;
     }
 
+    // wowlet: don't trust a bare open port. Before adopting whatever is listening on our RPC port,
+    // verify via get_info that it's a healthy wownero-mainnet wownerod (right nettype, sane height,
+    // making progress) — not a stale/stuck orphan from a prior crash or an unrelated squatter.
     if (Utils::portOpen(this->rpcHost, this->rpcPort)) {
-        // Something is already listening on our RPC port; assume it is a usable local node.
-        m_alreadyRunning = true;
-        emit daemonStateChanged(true);
-        return;
+        if (this->verifyAdoptableNode()) {
+            qDebug() << "Adopting existing wownerod on" << this->rpcAddress();
+            m_alreadyRunning = true;
+            emit daemonStateChanged(true);
+            return;
+        }
+        qWarning() << "Refusing to adopt unverified listener on" << this->rpcAddress()
+                   << "- will spawn a managed wownerod instead";
+        this->setErrorMessage(
+            QString("Found an unrecognized process on %1; starting a fresh node.").arg(this->rpcAddress()));
+        // fall through to spawn; if the port/data-dir is genuinely held, the spawn fails to bind
+        // and surfaces a clear error via handleProcessError().
     }
 
     m_restarts += 1;
@@ -106,6 +133,7 @@ void DaemonManager::start() {
     qDebug() << QString("Starting wownerod: %1 %2").arg(this->daemonPath, arguments.join(" "));
 
     m_process->start(this->daemonPath, arguments);
+    ChildProcessGuard::adoptAfterStart(m_process);   // wowlet: bind to kill-on-crash job (Windows)
     m_started = true;
 }
 
@@ -235,6 +263,95 @@ bool DaemonManager::shouldStartDaemon() {
     if (!conf()->get(Config::runLocalNode).toBool())
         return false;
 
+    return true;
+}
+
+// wowlet: synchronous, bounded get_info probe used by start() to decide whether an already-open RPC
+// port is a node we can safely adopt. Returns true ONLY for a healthy wownero-mainnet wownerod.
+// Self-contained (own QNetworkAccessManager + local QEventLoop with a hard timeout) so it can run
+// inside the synchronous start() at boot, before any wallet/DaemonRpc exists. Mirrors TorManager's
+// blocking getVersion() probe idiom.
+bool DaemonManager::verifyAdoptableNode() {
+    if (conf()->get(Config::offlineMode).toBool())
+        return false;
+
+    QNetworkAccessManager nam;
+    QNetworkRequest req(QUrl(QString("http://%1/get_info").arg(this->rpcAddress())));
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QEventLoop loop;
+    QTimer timeout;
+    timeout.setSingleShot(true);
+    QObject::connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
+
+    QNetworkReply *reply = nam.post(req, QByteArray("{}"));
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+
+    timeout.start(1500);          // hard cap on UI-thread block
+    loop.exec();
+
+    if (!reply->isFinished()) {   // timed out
+        reply->abort();
+        reply->deleteLater();
+        qWarning() << "get_info verify: no response from" << this->rpcAddress() << "within 1.5s";
+        return false;
+    }
+
+    bool netOk = reply->error() == QNetworkReply::NoError;
+    QByteArray data = reply->readAll();
+    reply->deleteLater();
+
+    if (!netOk || data.isEmpty() || !Utils::validateJSON(data)) {
+        qWarning() << "get_info verify: not a JSON-RPC daemon on" << this->rpcAddress();
+        return false;
+    }
+
+    QJsonObject obj = QJsonDocument::fromJson(data).object();
+
+    if (obj.value("status").toString() != "OK") {           // 1. real wownerod RPC
+        qWarning() << "get_info verify: bad status" << obj.value("status").toString();
+        return false;
+    }
+
+    const QString wantNet = constants::networkType == NetworkType::MAINNET   ? "mainnet"   // 2. nettype
+                          : constants::networkType == NetworkType::TESTNET   ? "testnet"
+                                                                             : "stagenet";
+    if (obj.value("nettype").toString() != wantNet) {
+        qWarning() << "get_info verify: wrong nettype" << obj.value("nettype").toString()
+                   << "(want" << wantNet << ")";
+        return false;
+    }
+
+    const quint64 height = obj.value("height").toVariant().toULongLong();   // 3. height sanity
+    if (height == 0) {
+        qWarning() << "get_info verify: node reports height 0";
+        return false;
+    }
+    quint64 knownHeight = 0;
+    if (appData()->heights.contains(constants::networkType))
+        knownHeight = static_cast<quint64>(appData()->heights[constants::networkType]);
+
+    const quint64 peers = obj.value("outgoing_connections_count").toVariant().toULongLong()
+                        + obj.value("incoming_connections_count").toVariant().toULongLong();
+    const bool progressing = obj.value("busy_syncing").toBool() || obj.value("synchronized").toBool();
+
+    if (knownHeight > 0) {
+        const quint64 slack = 720;   // ~1 day of wownero blocks; live-but-lagging is still adoptable
+        if (height + slack < knownHeight) {
+            if (peers == 0 && !progressing) {   // 4. stuck-orphan signature: behind AND peerless AND idle
+                qWarning() << "get_info verify: stale/stuck node — height" << height
+                           << "<< known" << knownHeight << "with 0 peers, not syncing";
+                return false;
+            }
+            qWarning() << "get_info verify: node behind (" << height << "/" << knownHeight
+                       << ") but live; adopting and letting it catch up";
+        }
+    }
+
+    if (peers == 0)   // soft: a freshly-spawned-but-orphaned node sits at 0 peers for minutes
+        qWarning() << "get_info verify: adopting node with 0 peers (likely still bootstrapping)";
+
+    qDebug() << "get_info verify: OK — nettype" << wantNet << "height" << height << "peers" << peers;
     return true;
 }
 

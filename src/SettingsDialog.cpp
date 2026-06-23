@@ -177,7 +177,7 @@ void Settings::setupNetworkTab() {
                 daemonManager()->start();
             else
                 daemonManager()->stop(false);   // non-blocking: don't freeze Settings while wownerod flushes
-            m_nodes->autoConnect(true);
+            m_nodes->reconnect();   // wowlet: clear blocklist + force-reconnect (handles a previously-failed remote)
         });
     } else {
         m_nodes = new Nodes(this, nullptr);

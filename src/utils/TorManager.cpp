@@ -6,6 +6,7 @@
 #include <QCoreApplication>
 #include <QDirIterator>
 
+#include "utils/ChildProcessGuard.h"   // wowlet: OS-level die-with-parent for bundled tor
 #include "utils/config.h"
 #include "utils/Utils.h"
 #include "utils/os/tails.h"
@@ -37,15 +38,26 @@ TorManager::TorManager(QObject *parent)
     connect(m_process, &QProcess::readyReadStandardOutput, this, &TorManager::handleProcessOutput);
     connect(m_process, &QProcess::errorOccurred, this, &TorManager::handleProcessError);
     connect(m_process, &QProcess::stateChanged, this, &TorManager::stateChanged);
+
+    ChildProcessGuard::installPreStart(m_process);   // wowlet: SIGKILL tor if wowlet dies (Unix)
+    connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, [this]{ this->stop(); });   // wowlet
 }
 
 QPointer<TorManager> TorManager::m_instance(nullptr);
 
 void TorManager::init() {
+    // wowlet: a live proxy/useLocalTor toggle re-runs init(). Reset failure/retry state so switching
+    // system->bundled Tor after a prior failure (Linux unpack, or a FailedToStart that latched
+    // m_stopRetries in handleProcessError) can actually start again instead of staying silently dead.
+    m_restarts = 0;
+    m_stopRetries = false;
+    m_unpacked = false;   // re-evaluate the unpack on the next start()
+
     m_localTor = !shouldStartTorDaemon();
 
     auto state = m_process->state();
     if (m_localTor && (state == QProcess::ProcessState::Running || state == QProcess::ProcessState::Starting)) {
+        m_stopRetries = true;   // wowlet: intentional kill (switching to system Tor); don't auto-restart it
         m_process->kill();
         m_started = false;
     }
@@ -54,6 +66,8 @@ void TorManager::init() {
 }
 
 void TorManager::stop() {
+    m_stopRetries = true;            // wowlet: intentional stop — suppress the stateChanged() auto-restart
+    m_checkConnectionTimer->stop();  // wowlet: stop probing the connection after an intentional stop
     m_process->kill();
     m_started = false;
 }
@@ -82,6 +96,17 @@ void TorManager::start() {
         this->torPath = alternativeTorFile;
     }
 
+    // wowlet: never hand QProcess a non-existent path (the Linux "empty folder" symptom). If the bundled
+    // binary isn't on disk, degrade to local/external-Tor mode + surface an error instead of burning the
+    // 4-retry budget on FailedToStart. With clearnet sync, node sync is unaffected; only broadcast-over-Tor
+    // is lost, which DaemonManager tolerates via clearnet relay.
+    if (!QFileInfo(this->torPath).isFile()) {
+        this->setErrorMessage("Bundled Tor binary not found; using external/local Tor if available: " + this->torPath);
+        m_localTor = true;
+        this->checkConnection();
+        return;
+    }
+
     qDebug() << QString("Start process: %1").arg(this->torPath);
 
     m_restarts += 1;
@@ -102,6 +127,7 @@ void TorManager::start() {
     qDebug() << QString("%1 %2").arg(this->torPath, arguments.join(" "));
 
     m_process->start(this->torPath, arguments);
+    ChildProcessGuard::adoptAfterStart(m_process);   // wowlet: bind to kill-on-crash job (Windows)
     m_started = true;
 }
 
@@ -201,36 +227,53 @@ bool TorManager::unpackBins() {
         return true;
     }
 
-    SemanticVersion embeddedVersion = SemanticVersion::fromString(QString(TOR_VERSION));
-    SemanticVersion filesystemVersion = this->getVersion(torPath);
-    qDebug() << QString("Tor versions: embedded %1, filesystem %2").arg(embeddedVersion.toString(), filesystemVersion.toString());
-    if (SemanticVersion::isValid(filesystemVersion) && (embeddedVersion > filesystemVersion)) {
-        qInfo() << "Embedded version is newer, overwriting.";
-        QFile::setPermissions(torPath, QFile::ReadOther | QFile::WriteOther);
-        if (!QFile::remove(torPath)) {
-            qWarning() << "Unable to remove old Tor binary";
-            return false;
-        }
-    }
+    // wowlet: QFile::copy never creates parent dirs; without this the copy loop can silently no-op on
+    // a fresh profile, leaving an empty tor/ dir and "tor failed to start" (Lucas/Fedora). main.cpp
+    // also mkpaths this, but make unpackBins() self-sufficient. Mirrors DaemonManager::unpackBins().
+    QDir().mkpath(this->torDir);
 
-    if (embeddedVersion > filesystemVersion) {
+    // wowlet: unpack when the binary is MISSING, not only when a version compare says "newer". Overwrite
+    // only when the embedded build is a VALID newer version (getVersion() of a non-existent file returns
+    // an invalid SemanticVersion, so it must not gate the first unpack).
+    bool present = QFileInfo(this->torPath).isFile();
+    SemanticVersion embeddedVersion = SemanticVersion::fromString(QString(TOR_VERSION));
+    SemanticVersion filesystemVersion = present ? this->getVersion(this->torPath) : SemanticVersion();
+    qDebug() << QString("Tor versions: embedded %1, filesystem %2").arg(embeddedVersion.toString(), filesystemVersion.toString());
+    bool needsOverwrite = present && SemanticVersion::isValid(filesystemVersion)
+                          && (embeddedVersion > filesystemVersion);
+
+    if (!present || needsOverwrite) {
+        if (needsOverwrite) {
+            qInfo() << "Embedded Tor is newer, overwriting.";
+            QFile::setPermissions(this->torPath, QFile::ReadOther | QFile::WriteOther);
+            QFile::remove(this->torPath);
+        }
         QDirIterator it(":/assets/tor", QDirIterator::Subdirectories);
         while (it.hasNext()) {
             QString assetFile = it.next();
-            QFileInfo assetFileInfo = QFileInfo(assetFile);
+            QString filePath = QDir(this->torDir).filePath(QFileInfo(assetFile).fileName());
             QFile f(assetFile);
-            QString filePath = QDir(this->torDir).filePath(assetFileInfo.fileName());
             f.copy(filePath);
             f.close();
         }
-        qInfo() << "Wrote Tor binaries to: " << this->torDir;
+        qInfo() << "Wrote Tor binaries to:" << this->torDir;
     }
 
 #if defined(Q_OS_UNIX)
-    QFile tor(this->torPath);
-    tor.setPermissions(QFile::ExeUser | QFile::ExeGroup | QFile::ExeOther
-    | QFile::ReadOwner | QFile::ReadGroup | QFile::ReadOther);
+    // wowlet: only chmod if the binary actually landed.
+    if (QFileInfo(this->torPath).isFile()) {
+        QFile tor(this->torPath);
+        tor.setPermissions(QFile::ExeUser | QFile::ExeGroup | QFile::ExeOther
+                           | QFile::ReadOwner | QFile::ReadGroup | QFile::ReadOther);
+    }
 #endif
+
+    // wowlet: do NOT report success if nothing landed — return false so shouldStartTorDaemon() falls
+    // back to --use-local-tor cleanly (see :297-303) instead of start()ing a missing binary.
+    if (!QFileInfo(this->torPath).isFile()) {
+        qWarning() << "Tor was not unpacked (no embedded Tor, or copy failed):" << this->torPath;
+        return false;
+    }
 
     m_unpacked = true;
     return true;
@@ -310,7 +353,7 @@ bool TorManager::shouldStartTorDaemon() {
 SemanticVersion TorManager::getVersion(const QString &fileName) {
     QProcess process;
     process.setProcessChannelMode(QProcess::MergedChannels);
-    process.start(this->torPath, QStringList() << "--version");
+    process.start(fileName, QStringList() << "--version");   // wowlet: use the passed path, not this->torPath
     process.waitForFinished(-1);
     QString output = process.readAllStandardOutput();
 

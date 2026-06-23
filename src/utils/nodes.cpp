@@ -330,6 +330,15 @@ void Nodes::autoConnect(bool forceReconnect) {
     this->updateModels();
 }
 
+// wowlet: clear the recent-failure blocklist then force a reconnect. autoConnect(true) alone is not
+// enough — pickEligibleNode() still filters the failed node out of m_recentFailures, so a node that
+// dropped during a transient Tor/proxy outage would stay blocklisted ("permanent Disconnected"). The
+// node/Tor live-toggle handlers call this to recover.
+void Nodes::reconnect() {
+    m_recentFailures.clear();
+    this->autoConnect(true);
+}
+
 FeatherNode Nodes::pickEligibleNode() {
     // Pick a node at random to connect to
     auto rtn = FeatherNode();

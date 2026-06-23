@@ -198,6 +198,14 @@ ifneq ($(host),$(build))
 $(1)_cmake += -DCMAKE_SYSTEM_NAME=$($(host_os)_cmake_system)
 $(1)_cmake += -DCMAKE_C_COMPILER_TARGET=$(host)
 $(1)_cmake += -DCMAKE_CXX_COMPILER_TARGET=$(host)
+# wowlet: confine find_package to the depends sysroot so cross cmake builds don't grab host
+# /usr -dev packages (libzip's find_package(ZLIB) was picking up host zlib1g-dev). Mirrors
+# toolchain.cmake.in; no-op on clean CI, needed on dev boxes with -dev libs. Upstreamable.
+$(1)_cmake += -DCMAKE_FIND_ROOT_PATH=$(host_prefix)
+$(1)_cmake += -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
+$(1)_cmake += -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
+$(1)_cmake += -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
+$(1)_cmake += -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
 endif
 endif
 endef

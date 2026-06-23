@@ -173,6 +173,9 @@ public slots:
     void onNodeSourceChanged(NodeSource nodeSource);
     void setCustomNodes(const QList<FeatherNode>& nodes);
     void autoConnect(bool forceReconnect = false);
+    // wowlet: clear the recent-failure blocklist and force-reconnect. Used by the node/Tor live-toggle
+    // handlers so a node blocklisted during a transient outage (e.g. a Tor toggle) is actually retried.
+    void reconnect();
 
 private slots:
     void onWalletRefreshed();

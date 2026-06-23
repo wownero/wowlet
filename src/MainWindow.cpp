@@ -36,6 +36,7 @@
 #include "utils/AppData.h"
 #include "utils/AsyncTask.h"
 #include "utils/ColorScheme.h"
+#include "utils/DaemonManager.h"   // wowlet: for daemonStateChanged reconnect (node-toggle race)
 #include "utils/Icons.h"
 #include "utils/TorManager.h"
 #include "utils/WebsocketNotifier.h"
@@ -512,6 +513,13 @@ void MainWindow::initWalletContext() {
         this->onConnectionStatusChanged(status);
         m_nodes->autoConnect();
     });
+    // wowlet: the embedded node's RPC port comes up asynchronously after daemonManager()->start(), so a
+    // freshly-toggled local node would otherwise sit Disconnected until the next status tick. Reconnect the
+    // instant its RPC is up. (autoConnect's runLocalNode branch routes to 127.0.0.1; start() is idempotent.)
+    connect(daemonManager(), &DaemonManager::daemonStateChanged, this, [this](bool up){
+        if (up && conf()->get(Config::runLocalNode).toBool())
+            m_nodes->autoConnect(true);
+    });
     connect(m_wallet, &Wallet::currentSubaddressAccountChanged, this, &MainWindow::updateTitle);
     connect(m_wallet, &Wallet::walletPassphraseNeeded, this, &MainWindow::onWalletPassphraseNeeded);
 
@@ -703,7 +711,7 @@ void MainWindow::onWebsocketStatusChanged(bool enabled) {
 }
 
 void MainWindow::onProxySettingsChangedConnect() {
-    m_nodes->connectToNode();
+    m_nodes->reconnect();   // wowlet: clear blocklist + force-reconnect after a live Tor/proxy switch (test 2)
     this->onProxySettingsChanged();
 }
 

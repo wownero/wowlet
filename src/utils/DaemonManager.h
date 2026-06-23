@@ -59,6 +59,11 @@ private slots:
 
 private:
     bool shouldStartDaemon();
+    // wowlet: verify an already-open RPC port really is a healthy wownero-mainnet wownerod before
+    // adopting it, instead of trusting a bare TCP port-open probe. Prevents the wallet from silently
+    // syncing against a stale/stuck orphan (e.g. left by a prior crash) or a process squatting
+    // 127.0.0.1:34568. Synchronous, bounded (~1.5s), UI-thread-safe.
+    bool verifyAdoptableNode();
     void setErrorMessage(const QString &msg);
 
     QProcess *m_process;

@@ -115,7 +115,10 @@ static const QHash<Config::ConfigKey, ConfigDirective> configStrings = {
 
         // Tor
         {Config::proxy, {QS("proxy"), Config::Proxy::Tor}},
-        {Config::torPrivacyLevel, {QS("torPrivacyLevel"), 1}},
+        // wowlet: allTorExceptNode(0) — NEVER sync blocks over Tor. Block sync is ALWAYS clearnet (speed,
+        // the standard monero model). Tor is ONLY for tx broadcast (via DaemonManager's --tx-proxy), which
+        // is independent of this. This is what makes remote nodes work with OR without Tor.
+        {Config::torPrivacyLevel, {QS("torPrivacyLevel"), 0}},
         {Config::torOnlyAllowOnion, {QS("torOnlyAllowOnion"), false}},
         {Config::socks5Host, {QS("socks5Host"), "127.0.0.1"}},
         {Config::socks5Port, {QS("socks5Port"), "9050"}},
