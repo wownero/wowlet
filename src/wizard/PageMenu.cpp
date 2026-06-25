@@ -15,6 +15,10 @@ PageMenu::PageMenu(WizardFields *fields, WalletKeysFilesModel *wallets, QWidget 
         , m_fields(fields)
 {
     ui->setupUi(this);
+
+    // wowlet: hide the hardware-device option — wownero has no Ledger/Trezor support
+    ui->radioCreateFromDevice->setVisible(false);
+
     this->setButtonText(QWizard::FinishButton, "Open recent wallet");
 
     ui->label_version->setText(QString("wowlet %1 — by wownero.org").arg(FEATHER_VERSION));
