@@ -108,6 +108,14 @@ void DaemonManager::start() {
     arguments << "--no-igd";                 // no UPnP port mapping
     arguments << "--out-peers" << "16";
     arguments << "--log-file" << QDir(dataDir).filePath("wownerod.log");
+    // wowlet: disable LMDB batch write mode so every block is committed in its own transaction.
+    // Without this, wownero accumulates blocks in a single large write transaction that is ABORTED
+    // (not committed) when the daemon shuts down mid-sync — causing all progress since the last
+    // batch boundary to be silently lost. This is visible in wownerod.log: sessions consistently
+    // revert to a stale height despite a full graceful shutdown sequence. Using "safe" mode is
+    // slower for initial sync but is the only correct choice for an embedded node that starts and
+    // stops with the wallet; the wownero chain is small enough that the overhead is acceptable.
+    arguments << "--db-sync-mode" << "safe";
 
     // Full archival by default (wownero's chain is small); prune is an explicit opt-in.
     if (conf()->get(Config::pruneBlockchain).toBool())
