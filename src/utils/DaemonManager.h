@@ -73,6 +73,7 @@ private:
     bool m_synced = false;
     bool m_stopping = false;
     int m_restarts = 0;
+    qint64 m_lastSpawnMs = 0;   // wowlet: wall-clock of last spawn — ages out the crash-retry budget
 
     static QPointer<DaemonManager> m_instance;
 };

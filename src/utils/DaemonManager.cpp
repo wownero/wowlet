@@ -4,6 +4,7 @@
 #include "utils/DaemonManager.h"
 
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDir>
 #include <QDirIterator>
 #include <QEventLoop>
@@ -62,6 +63,11 @@ void DaemonManager::start() {
     if (state == QProcess::ProcessState::Running || state == QProcess::ProcessState::Starting)
         return;
 
+    // wowlet: a deliberate (re)start clears the stop latch, so a later UNEXPECTED exit can auto-restart
+    // again. Without this, m_stopping stays true after the first node toggle-off and the crash
+    // auto-restart is silently dead for the rest of the session.
+    m_stopping = false;
+
     if (!this->unpackBins()) {
         this->setErrorMessage("Unable to unpack the embedded wownerod binary.");
         return;
@@ -84,6 +90,14 @@ void DaemonManager::start() {
         // fall through to spawn; if the port/data-dir is genuinely held, the spawn fails to bind
         // and surfaces a clear error via handleProcessError().
     }
+
+    // wowlet: the retry cap guards against a rapid crash-loop, not legit restarts. If the node had been
+    // up a while before this (re)start, clear the budget — otherwise a few node toggles over a session
+    // trip "maximum retries exceeded" and it won't start again until wowlet is relaunched.
+    const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+    if (m_lastSpawnMs != 0 && (nowMs - m_lastSpawnMs) > 60000)
+        m_restarts = 0;
+    m_lastSpawnMs = nowMs;
 
     m_restarts += 1;
     if (m_restarts > 4) {
