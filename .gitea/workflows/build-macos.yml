@@ -1,0 +1,77 @@
+name: macos build (gitea self-hosted)
+
+# Runs ONLY on the Gitea mac runner (GitHub ignores .gitea/workflows).
+# Dispatch-only: the mac runner has capacity 1 and also serves the Hash Bags
+# iOS lane, so macOS wowlet builds are an explicit button, not a push hook.
+# All build state lands under the runner's work dir, which lives on
+# /Volumes/DataSSD (never backed up: the fleet backup pulls an allowlist of
+# gitea data only).
+#
+# Produces an UNSIGNED app bundle artifact. Signing/notarization is a
+# follow-up step once a Developer ID Application certificate exists:
+#   codesign --deep --options runtime --sign "Developer ID Application: ..."
+#   xcrun notarytool submit --wait; xcrun stapler staple
+# with the P12 + App Store Connect API key delivered as repo secrets and
+# imported into an ephemeral keychain per run (same pattern as the Hash Bags
+# iOS lane).
+
+on: [workflow_dispatch]
+
+jobs:
+  build-macos:
+    name: "macOS (brew, native)"
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: install dependencies (brew)
+        run: |
+          export PATH="/opt/homebrew/bin:$PATH"
+          brew install --quiet qt libsodium libzip qrencode unbound cmake boost hidapi openssl expat protobuf pkgconfig zxing-cpp
+
+      - name: fetch wownerod to embed
+        run: |
+          set -e
+          ARCH=$(uname -m)
+          case "$ARCH" in
+            arm64) WOWTAR=wownero-aarch64-apple-darwin11-v0.11.4.0.tar.bz2 ;;
+            *)     WOWTAR=wownero-x86_64-apple-darwin11-v0.11.4.0.tar.bz2 ;;
+          esac
+          mkdir -p /tmp/wownerod-embed
+          curl -L -o /tmp/wownero.tar.bz2 \
+            "https://github.com/wownero/wownero-codeberg-mirror/releases/download/v0.11.4.0/$WOWTAR"
+          tar xjf /tmp/wownero.tar.bz2 -C /tmp
+          find /tmp -name wownerod -type f -exec cp {} /tmp/wownerod-embed/ \;
+          chmod +x /tmp/wownerod-embed/wownerod
+          ls -la /tmp/wownerod-embed
+
+      - name: build
+        run: |
+          export PATH="/opt/homebrew/bin:$PATH"
+          mkdir -p build && cd build
+          cmake -DWITH_SCANNER=OFF -DWOWNEROD_DIR=/tmp/wownerod-embed ..
+          cmake --build . -j "$(sysctl -n hw.ncpu)"
+
+      - name: package app bundle (unsigned)
+        run: |
+          set -e
+          cd build
+          ls -la bin/ || true
+          APP=$(find . -maxdepth 3 -name "*.app" -type d | head -1)
+          if [ -z "$APP" ]; then
+            echo "no .app bundle produced; uploading raw binary"
+            mkdir -p dist && cp bin/wowlet dist/ 2>/dev/null || cp wowlet dist/
+          else
+            mkdir -p dist && cp -R "$APP" dist/
+          fi
+          cd dist && zip -ry ../wowlet-macos-unsigned.zip . && cd ..
+          ls -la wowlet-macos-unsigned.zip
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: wowlet-macos-unsigned
+          path: build/wowlet-macos-unsigned.zip
+          retention-days: 14
