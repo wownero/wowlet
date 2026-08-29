@@ -51,6 +51,9 @@ namespace Ui {
     class MainWindow;
 }
 
+#include <QSet>
+#include <QTimer>
+
 class ToggleTab : QObject {
 Q_OBJECT
 
@@ -214,11 +217,22 @@ private:
     QIcon hardwareDevicePairedIcon();
     QIcon hardwareDeviceUnpairedIcon();
 
+    // wowlet: stuck-transaction detection and pending re-relay. Both are
+    // strictly local: history rows and the wallet's own tx cache; no txid is
+    // ever queried against any external service.
+    void checkStuckTransactions();
+    void relayPendingTransactions();
+
     QScopedPointer<Ui::MainWindow> ui;
     WindowManager *m_windowManager;
     Wallet *m_wallet = nullptr;
     Nodes *m_nodes;
     DaemonRpc *m_rpc;
+
+    // wowlet: see checkStuckTransactions / relayPendingTransactions
+    QTimer *m_stuckTxTimer = nullptr;
+    QSet<QString> m_stuckTxWarned;
+    int m_broadcastBatchSuccesses = 0;
 
     SplashDialog *m_splashDialog = nullptr;
     AccountSwitcherDialog *m_accountSwitcherDialog = nullptr;
