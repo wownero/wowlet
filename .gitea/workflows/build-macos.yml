@@ -54,11 +54,29 @@ jobs:
           chmod +x /tmp/wownerod-embed/wownerod
           ls -la /tmp/wownerod-embed
 
+      - name: fetch tor to embed
+        run: |
+          set -e
+          ARCH=$(uname -m)
+          case "$ARCH" in
+            arm64) TORTAR=tor-expert-bundle-macos-aarch64-15.0.tar.gz ;;
+            *)     TORTAR=tor-expert-bundle-macos-x86_64-15.0.tar.gz ;;
+          esac
+          mkdir -p /tmp/teb /tmp/tor-embed
+          curl -L -o /tmp/teb.tgz "https://archive.torproject.org/tor-package-archive/torbrowser/15.0/$TORTAR"
+          tar xzf /tmp/teb.tgz -C /tmp/teb
+          cp /tmp/teb/tor/tor /tmp/tor-embed/
+          chmod +x /tmp/tor-embed/tor
+          # expert-bundle RELEASE number (15.0) is NOT the tor version — derive it
+          TORVER=$(/tmp/tor-embed/tor --version | grep -oE '[0-9]+(\.[0-9]+){3}' | head -1)
+          echo "TOR_VERSION=$TORVER" >> "$GITHUB_ENV"
+          echo "embedded tor version: $TORVER"
+
       - name: build
         run: |
           export PATH="/opt/homebrew/bin:$PATH"
           mkdir -p build && cd build
-          cmake -DWITH_SCANNER=OFF -DWOWNEROD_DIR=/tmp/wownerod-embed -DCMAKE_PREFIX_PATH="$(brew --prefix qt)" ..
+          cmake -DWITH_SCANNER=OFF -DWOWNEROD_DIR=/tmp/wownerod-embed -DTOR_DIR=/tmp/tor-embed -DTOR_VERSION="$TOR_VERSION" -DCMAKE_PREFIX_PATH="$(brew --prefix qt)" ..
           cmake --build . -j "$(sysctl -n hw.ncpu)"
 
       - name: package app bundle
