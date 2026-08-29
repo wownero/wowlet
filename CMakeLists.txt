@@ -156,11 +156,11 @@ if(TOR_DIR)
     if (REPRODUCIBLE)
         set(TOR_COPY_CMD "cp -a ${TOR_DIR}/* ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/tor")
     else()
-        set(TOR_COPY_CMD "cp -au ${TOR_DIR}/* ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/tor")
+        set(TOR_COPY_CMD "cp -a ${TOR_DIR}/* ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/tor")   # wowlet: BSD cp has no -u (macOS: illegal option, exit 64, silent no-op)
     endif()
 
     execute_process(COMMAND bash -c "${TOR_COPY_CMD}" RESULT_VARIABLE ret)
-    if(ret EQUAL "1")
+    if(NOT ret EQUAL "0")
         message(FATAL_ERROR "Tor copy failure: ${TOR_COPY_CMD}")
     endif()
 
@@ -176,11 +176,11 @@ if(WOWNEROD_DIR)
     if (REPRODUCIBLE)
         set(WOWNEROD_COPY_CMD "cp -a ${WOWNEROD_DIR}/* ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/wownerod")
     else()
-        set(WOWNEROD_COPY_CMD "cp -au ${WOWNEROD_DIR}/* ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/wownerod")
+        set(WOWNEROD_COPY_CMD "cp -a ${WOWNEROD_DIR}/* ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/wownerod")   # wowlet: BSD cp has no -u
     endif()
 
     execute_process(COMMAND bash -c "${WOWNEROD_COPY_CMD}" RESULT_VARIABLE ret)
-    if(ret EQUAL "1")
+    if(NOT ret EQUAL "0")
         message(FATAL_ERROR "wownerod copy failure: ${WOWNEROD_COPY_CMD}")
     endif()
 
