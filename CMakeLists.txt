@@ -148,6 +148,10 @@ if(TOR_DIR)
 
     message(STATUS "Embedded Tor version: ${TOR_VERSION}")
 
+    # wowlet: the target dir is not tracked in git — create it (BSD cp's usage
+    # error exits 64, which the ret check below does not catch)
+    execute_process(COMMAND bash -c "mkdir -p ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/tor")
+
     # Always copy Tor when doing a reproducible build to prevent old versions from getting included
     if (REPRODUCIBLE)
         set(TOR_COPY_CMD "cp -a ${TOR_DIR}/* ${CMAKE_CURRENT_SOURCE_DIR}/src/assets/tor")
