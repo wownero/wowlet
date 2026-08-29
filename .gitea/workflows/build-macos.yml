@@ -7,13 +7,12 @@ name: macos build (gitea self-hosted)
 # /Volumes/DataSSD (never backed up: the fleet backup pulls an allowlist of
 # gitea data only).
 #
-# Produces an UNSIGNED app bundle artifact. Signing/notarization is a
-# follow-up step once a Developer ID Application certificate exists:
-#   codesign --deep --options runtime --sign "Developer ID Application: ..."
-#   xcrun notarytool submit --wait; xcrun stapler staple
-# with the P12 + App Store Connect API key delivered as repo secrets and
-# imported into an ephemeral keychain per run (same pattern as the Hash Bags
-# iOS lane).
+# Signing/notarization uses the SAME seven secrets as the smirk-monorepo
+# desktop lane, set by ~/keys/suchsoftware/set-gitea-desktop-secrets.sh:
+#   APPLE_CERTIFICATE (b64 Developer ID Application .p12),
+#   APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY, APPLE_TEAM_ID,
+#   APPLE_API_ISSUER, APPLE_API_KEY, APPLE_API_KEY_P8_BASE64 (notarytool).
+# If APPLE_CERTIFICATE is unset the build ships unsigned instead of failing.
 
 on: [workflow_dispatch]
 
@@ -21,6 +20,13 @@ jobs:
   build-macos:
     name: "macOS (brew, native)"
     runs-on: macos-latest
+    env:
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+      APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+      APPLE_API_KEY_P8_BASE64: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,24 +60,75 @@ jobs:
           cmake -DWITH_SCANNER=OFF -DWOWNEROD_DIR=/tmp/wownerod-embed ..
           cmake --build . -j "$(sysctl -n hw.ncpu)"
 
-      - name: package app bundle (unsigned)
+      - name: package app bundle
         run: |
           set -e
           cd build
-          ls -la bin/ || true
           APP=$(find . -maxdepth 3 -name "*.app" -type d | head -1)
-          if [ -z "$APP" ]; then
-            echo "no .app bundle produced; uploading raw binary"
-            mkdir -p dist && cp bin/wowlet dist/ 2>/dev/null || cp wowlet dist/
-          else
-            mkdir -p dist && cp -R "$APP" dist/
+          [ -n "$APP" ] || { echo "no .app bundle produced"; ls -la bin/; exit 1; }
+          mkdir -p dist
+          cp -R "$APP" dist/Wowlet.app
+          # bundle Qt frameworks/plugins so the app runs off-machine
+          /opt/homebrew/opt/qt/bin/macdeployqt dist/Wowlet.app
+          ls -la dist/
+
+      - name: sign and notarize (skipped when secrets absent)
+        run: |
+          set -e
+          cd build
+          if [ -z "$APPLE_CERTIFICATE" ]; then
+            echo "APPLE_CERTIFICATE not set — shipping UNSIGNED build"
+            exit 0
           fi
-          cd dist && zip -ry ../wowlet-macos-unsigned.zip . && cd ..
-          ls -la wowlet-macos-unsigned.zip
+          KC=/tmp/wowlet-ci.keychain-db
+          KCPW=$(/usr/bin/uuidgen)
+          echo "$KCPW" > /tmp/wowlet-ci-kcpw   # for the cleanup step only
+          security create-keychain -p "$KCPW" "$KC"
+          security set-keychain-settings -lut 3600 "$KC"
+          security unlock-keychain -p "$KCPW" "$KC"
+          printf '%s' "$APPLE_CERTIFICATE" | base64 -d > /tmp/dev_id.p12
+          security import /tmp/dev_id.p12 -k "$KC" -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KCPW" "$KC" >/dev/null
+          security list-keychains -d user -s "$KC" login.keychain-db
+
+          # sign nested Mach-O executables first (embedded wownerod etc.),
+          # then frameworks, then the bundle — all hardened-runtime + timestamp
+          SIGN() { codesign --force --options runtime --timestamp --keychain "$KC" \
+                     --sign "$APPLE_SIGNING_IDENTITY" "$@"; }
+          find dist/Wowlet.app -type f -perm +111 ! -path "*/Frameworks/*" \
+            | while read -r f; do file "$f" | grep -q Mach-O && SIGN "$f" || true; done
+          find dist/Wowlet.app/Contents/Frameworks -maxdepth 1 \( -name "*.framework" -o -name "*.dylib" \) 2>/dev/null \
+            | while read -r fw; do SIGN "$fw"; done
+          SIGN dist/Wowlet.app
+          codesign --verify --deep --strict dist/Wowlet.app
+
+          printf '%s' "$APPLE_API_KEY_P8_BASE64" | base64 -d > /tmp/notary.p8
+          ditto -c -k --keepParent dist/Wowlet.app /tmp/wowlet-notarize.zip
+          xcrun notarytool submit /tmp/wowlet-notarize.zip \
+            --key /tmp/notary.p8 --key-id "$APPLE_API_KEY" --issuer "$APPLE_API_ISSUER" \
+            --wait --timeout 30m
+          xcrun stapler staple dist/Wowlet.app
+          echo "signed + notarized + stapled"
+
+      - name: zip artifact
+        run: |
+          set -e
+          cd build/dist
+          ditto -c -k --keepParent Wowlet.app ../wowlet-macos-$(uname -m).zip
+          ls -la ../wowlet-macos-*.zip
+
+      - name: cleanup signing material
+        if: always()
+        run: |
+          if [ -f /tmp/wowlet-ci-kcpw ]; then
+            security delete-keychain /tmp/wowlet-ci.keychain-db || true
+          fi
+          rm -f /tmp/dev_id.p12 /tmp/notary.p8 /tmp/wowlet-ci-kcpw /tmp/wowlet-notarize.zip
 
       - name: upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: wowlet-macos-unsigned
-          path: build/wowlet-macos-unsigned.zip
+          name: wowlet-macos
+          path: build/wowlet-macos-*.zip
           retention-days: 14
