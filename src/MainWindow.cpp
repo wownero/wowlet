@@ -542,6 +542,24 @@ void MainWindow::initWalletContext() {
     connect(m_wallet, &Wallet::deviceError,         this, &MainWindow::onDeviceError);
     
     connect(m_wallet, &Wallet::multiBroadcast,      this, &MainWindow::onMultiBroadcast);
+
+    // wowlet: count multi-broadcast relay results so a total failure (Tor not
+    // bootstrapped, every node unreachable) is surfaced instead of silent.
+    connect(m_rpc, &DaemonRpc::ApiResponse, this, [this](const DaemonRpc::DaemonResponse &resp){
+        if (resp.endpoint == DaemonRpc::Endpoint::SEND_RAW_TRANSACTION && resp.ok) {
+            m_broadcastBatchSuccesses++;
+        }
+    });
+
+    // wowlet: when the embedded daemon reports synced after a (re)start,
+    // re-announce any still-pending outgoing txs; a restarted pool has
+    // forgotten them.
+    connect(daemonManager(), &DaemonManager::synced, this, &MainWindow::relayPendingTransactions);
+
+    // wowlet: periodic local check for outgoing txs stuck unconfirmed.
+    m_stuckTxTimer = new QTimer(this);
+    connect(m_stuckTxTimer, &QTimer::timeout, this, &MainWindow::checkStuckTransactions);
+    m_stuckTxTimer->start(2 * 60 * 1000);
 }
 
 void MainWindow::menuToggleTabVisible(const QString &key){
@@ -760,6 +778,7 @@ void MainWindow::onSubtractFeeFromAmountEnabled(bool enabled) {
 }
 
 void MainWindow::onMultiBroadcast(const QMap<QString, QString> &txHexMap) {
+    m_broadcastBatchSuccesses = 0;
     QMapIterator<QString, QString> i(txHexMap);
     while (i.hasNext()) {
         i.next();
@@ -770,6 +789,99 @@ void MainWindow::onMultiBroadcast(const QMap<QString, QString> &txHexMap) {
             m_rpc->sendRawTransaction(i.value());
         }
     }
+
+    // wowlet: if not a single node accepted the relay, say so. The commit to
+    // the local daemon may still confirm on its own, but when Tor is down and
+    // the daemon runs with an exclusive --tx-proxy, nothing will ever leave
+    // this machine; the user should know within a minute, not after two days.
+    const QStringList txids = txHexMap.keys();
+    QTimer::singleShot(45 * 1000, this, [this, txids]{
+        if (m_broadcastBatchSuccesses > 0 || txids.isEmpty()) {
+            return;
+        }
+        QMessageBox box(this);
+        box.setWindowTitle("Transaction relay may have failed");
+        box.setText("No node accepted the transaction broadcast. If Tor is "
+                    "still starting (or unavailable), the transaction may not "
+                    "reach the network at all.");
+        box.setInformativeText("Rebroadcasting later is always safe: a "
+                               "transaction can never be spent twice.");
+        QPushButton *retry = box.addButton("Rebroadcast now", QMessageBox::YesRole);
+        box.addButton("Later", QMessageBox::RejectRole);
+        box.exec();
+        if (box.clickedButton() == retry) {
+            this->onResendTransaction(txids[0]);
+        }
+    });
+}
+
+void MainWindow::checkStuckTransactions() {
+    // wowlet: a pending outgoing tx unconfirmed for this long has, in
+    // practice, not reached the network (Tor down at send time, embedded
+    // node restarted mid-relay). Local history scan only; no network calls,
+    // and no txid is ever looked up against any external service. The remedy
+    // reuses the existing rebroadcast path, which reconnects to a fresh node
+    // first.
+    constexpr qint64 kStuckSecs = 25 * 60;
+    if (m_wallet == nullptr || m_wallet->history() == nullptr) {
+        return;
+    }
+    TransactionHistory *history = m_wallet->history();
+    for (quint64 i = 0; i < history->count(); i++) {
+        const TransactionRow &row = history->transaction(static_cast<int>(i));
+        if (!row.pending || row.direction == TransactionRow::Direction_In) {
+            continue;
+        }
+        if (row.timestamp.secsTo(QDateTime::currentDateTime()) < kStuckSecs) {
+            continue;
+        }
+        if (m_stuckTxWarned.contains(row.hash)) {
+            continue;
+        }
+        m_stuckTxWarned.insert(row.hash);
+        QMessageBox box(this);
+        box.setWindowTitle("Transaction appears stuck");
+        box.setText(QString("An outgoing transaction has been unconfirmed for "
+                            "more than %1 minutes:\n\n%2")
+                        .arg(kStuckSecs / 60).arg(row.hash));
+        box.setInformativeText("It may never have reached the network. "
+                               "Rebroadcasting is safe: a transaction can "
+                               "never be spent twice, and your change stays "
+                               "locked until this either confirms or fails.");
+        QPushButton *retry = box.addButton("Rebroadcast now", QMessageBox::YesRole);
+        box.addButton("Later", QMessageBox::RejectRole);
+        box.exec();
+        if (box.clickedButton() == retry) {
+            this->onResendTransaction(row.hash);
+        }
+    }
+}
+
+void MainWindow::relayPendingTransactions() {
+    // wowlet: rebuild the multi-broadcast map from the wallet's own tx cache
+    // for every pending outgoing tx and re-announce it. Strictly local
+    // sources; the announcement itself goes through the normal (Tor-routed)
+    // broadcast path.
+    if (m_wallet == nullptr || m_wallet->history() == nullptr) {
+        return;
+    }
+    TransactionHistory *history = m_wallet->history();
+    QMap<QString, QString> txHexMap;
+    for (quint64 i = 0; i < history->count(); i++) {
+        const TransactionRow &row = history->transaction(static_cast<int>(i));
+        if (!row.pending || row.direction == TransactionRow::Direction_In) {
+            continue;
+        }
+        QString txHex = m_wallet->getCacheTransaction(row.hash);
+        if (!txHex.isEmpty()) {
+            txHexMap[row.hash] = txHex;
+        }
+    }
+    if (txHexMap.isEmpty()) {
+        return;
+    }
+    qDebug() << QString("Re-relaying %1 pending transaction(s) after daemon sync").arg(txHexMap.size());
+    this->onMultiBroadcast(txHexMap);
 }
 
 void MainWindow::onSyncStatus(quint64 height, quint64 target, bool daemonSync) {
