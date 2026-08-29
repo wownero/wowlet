@@ -68,6 +68,10 @@ jobs:
           curl -L -o /tmp/teb.tgz "https://archive.torproject.org/tor-package-archive/torbrowser/15.0/$TORTAR"
           tar xzf /tmp/teb.tgz -C /tmp/teb
           cp /tmp/teb/tor/tor /tmp/teb/tor/libevent-*.dylib /tmp/tor-embed/
+          # tor ships UNSIGNED; arm64 macOS SIGKILLs unsigned binaries. Ad-hoc sign
+          # BEFORE embedding — the signature travels inside the file, so the copy
+          # the app unpacks at runtime on user machines is runnable too.
+          codesign -s - -f /tmp/tor-embed/tor /tmp/tor-embed/libevent-*.dylib
           chmod +x /tmp/tor-embed/tor
           # expert-bundle RELEASE number (15.0) is NOT the tor version — derive it
           TORVER=$(/tmp/tor-embed/tor --version | grep -oE '[0-9]+(\.[0-9]+){3}' | head -1)
