@@ -69,6 +69,10 @@ jobs:
           [ -n "$APP" ] || { echo "no .app bundle produced"; ls -la bin/; exit 1; }
           mkdir -p dist
           cp -R "$APP" dist/Wowlet.app
+          # cmake never places the icon in the bundle (upstream only copies it
+          # for the dormant `installed/` layout)
+          mkdir -p dist/Wowlet.app/Contents/Resources
+          cp ../src/assets/images/appicons/appicon.icns dist/Wowlet.app/Contents/Resources/
           # bundle Qt frameworks/plugins so the app runs off-machine
           /opt/homebrew/opt/qt/bin/macdeployqt dist/Wowlet.app
           ls -la dist/
