@@ -67,7 +67,7 @@ jobs:
           mkdir -p /tmp/teb /tmp/tor-embed
           curl -L -o /tmp/teb.tgz "https://archive.torproject.org/tor-package-archive/torbrowser/15.0/$TORTAR"
           tar xzf /tmp/teb.tgz -C /tmp/teb
-          cp /tmp/teb/tor/tor /tmp/tor-embed/
+          cp /tmp/teb/tor/tor /tmp/teb/tor/libevent-*.dylib /tmp/tor-embed/
           chmod +x /tmp/tor-embed/tor
           # expert-bundle RELEASE number (15.0) is NOT the tor version — derive it
           TORVER=$(/tmp/tor-embed/tor --version | grep -oE '[0-9]+(\.[0-9]+){3}' | head -1)
