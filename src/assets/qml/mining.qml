@@ -134,10 +134,12 @@ Rectangle {
                         Text {
                             id: hashRateText
                             text: "-"
-                            anchors.verticalCenter: parent.verticalCenter
-                            anchors.left: parent.left
+                            anchors.fill: parent
                             anchors.leftMargin: 4
-                            font.pointSize: 16
+                            verticalAlignment: Text.AlignVCenter
+                            fontSizeMode: Text.HorizontalFit
+                            minimumPointSize: 8
+                            font.pointSize: 14
                             font.family: comicMono.name;
                             antialiasing: false
                             color: "#41FF00"
@@ -160,7 +162,7 @@ Rectangle {
                         Layout.fillHeight: true
 
                         Text {
-                            text: "uptime"
+                            text: "Uptime"
                             anchors.verticalCenter: parent.verticalCenter
                             anchors.left: parent.left
                             anchors.leftMargin: 4
@@ -179,10 +181,12 @@ Rectangle {
                         Text {
                             id: miningUptime
                             text: "-"
-                            anchors.verticalCenter: parent.verticalCenter
-                            anchors.left: parent.left
+                            anchors.fill: parent
                             anchors.leftMargin: 4
-                            font.pointSize: 12
+                            verticalAlignment: Text.AlignVCenter
+                            fontSizeMode: Text.HorizontalFit
+                            minimumPointSize: 8
+                            font.pointSize: 14
                             font.family: comicMono.name;
                             antialiasing: false
                             color: "#41FF00"
@@ -270,7 +274,7 @@ Rectangle {
                                         anchors.verticalCenter: parent.verticalCenter
                                         anchors.left: parent.left
                                         anchors.leftMargin: 8
-                                        font.pointSize: 20
+                                        font.pointSize: 14
                                         font.family: comicMonoBold.name;
                                         color: "#41FF00"
                                         antialiasing: false
@@ -285,10 +289,12 @@ Rectangle {
                                     Text {
                                         id: heightText
                                         text: "-"
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        anchors.left: parent.left
+                                        anchors.fill: parent
                                         anchors.leftMargin: 8
-                                        font.pointSize: 18
+                                        verticalAlignment: Text.AlignVCenter
+                                        fontSizeMode: Text.HorizontalFit
+                                        minimumPointSize: 9
+                                        font.pointSize: 14
                                         font.family: comicMonoBold.name;
                                         color: "#41FF00"
                                         antialiasing: false
@@ -311,7 +317,7 @@ Rectangle {
                                         anchors.verticalCenter: parent.verticalCenter
                                         anchors.left: parent.left
                                         anchors.leftMargin: 8
-                                        font.pointSize: 20
+                                        font.pointSize: 14
                                         font.family: comicMonoBold.name;
                                         color: "#41FF00"
                                         antialiasing: false
@@ -327,9 +333,9 @@ Rectangle {
                                         id: syncPctText
                                         text: "-"
                                         anchors.verticalCenter: parent.verticalCenter
-                                        anchors.horizontalCenter: parent.horizontalCenter
-
-                                        font.pointSize: 18
+                                        anchors.left: parent.left
+                                        anchors.leftMargin: 8
+                                        font.pointSize: 14
                                         font.family: comicMonoBold.name;
                                         color: "#41FF00"
                                         antialiasing: false
