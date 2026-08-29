@@ -58,7 +58,7 @@ jobs:
         run: |
           export PATH="/opt/homebrew/bin:$PATH"
           mkdir -p build && cd build
-          cmake -DWITH_SCANNER=OFF -DWOWNEROD_DIR=/tmp/wownerod-embed ..
+          cmake -DWITH_SCANNER=OFF -DWOWNEROD_DIR=/tmp/wownerod-embed -DCMAKE_PREFIX_PATH="$(brew --prefix qt)" ..
           cmake --build . -j "$(sysctl -n hw.ncpu)"
 
       - name: package app bundle
