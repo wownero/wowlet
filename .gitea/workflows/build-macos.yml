@@ -105,6 +105,52 @@ jobs:
           cp ../src/assets/images/appicons/appicon.icns dist/Wowlet.app/Contents/Resources/
           # bundle Qt frameworks/plugins so the app runs off-machine
           /opt/homebrew/opt/qt/bin/macdeployqt dist/Wowlet.app
+
+          # macdeployqt bundles Qt frameworks but not the plain-dylib brew deps
+          # of Qt's image plugins (libwebp/libsharpyuv/libbrotli...), which are
+          # referenced as @rpath/lib*.dylib. Without them a clean (no-Homebrew)
+          # Mac can't load those image formats. Qt frameworks use a different
+          # ref form (@rpath/Qt*.framework/...), so keying strictly on
+          # `@rpath/*.dylib` bundles the stragglers WITHOUT touching Qt.
+          # Several passes converge (a bundled lib pulls in further deps).
+          APP=dist/Wowlet.app
+          FW="$APP/Contents/Frameworks"
+          mkdir -p "$FW"
+          for pass in 1 2 3 4; do
+            while IFS= read -r macho; do
+              file "$macho" | grep -q Mach-O || continue
+              chmod u+w "$macho"
+              otool -L "$macho" | awk 'NR>1{print $1}' | while IFS= read -r dep; do
+                case "$dep" in
+                  @rpath/*.dylib)
+                    name=$(basename "$dep")
+                    if [ -f "$FW/$name" ]; then
+                      install_name_tool -change "$dep" "@executable_path/../Frameworks/$name" "$macho" 2>/dev/null || true
+                      continue
+                    fi
+                    real=$(find /opt/homebrew/lib /opt/homebrew/opt/*/lib -maxdepth 1 -name "$name" 2>/dev/null | head -1)
+                    if [ -n "$real" ]; then
+                      cp -n "$real" "$FW/$name"
+                      chmod u+w "$FW/$name"
+                      install_name_tool -id "@executable_path/../Frameworks/$name" "$FW/$name" 2>/dev/null || true
+                      install_name_tool -change "$dep" "@executable_path/../Frameworks/$name" "$macho" 2>/dev/null || true
+                    fi
+                    ;;
+                esac
+              done
+            done < <(find "$APP" -type f)
+          done
+
+          # Fail if any @rpath/*.dylib (non-Qt) remains unresolved in the bundle
+          leftover=$(find "$APP" -type f | while IFS= read -r m; do
+            file "$m" | grep -q Mach-O || continue
+            otool -L "$m" | awk 'NR>1{print $1}' | grep -E '^@rpath/[^/]+\.dylib$' || true
+          done | sort -u)
+          if [ -n "$leftover" ]; then
+            echo "UNBUNDLED @rpath dylibs remain:"; echo "$leftover"; exit 1
+          fi
+          echo "all plain-dylib deps bundled"
+          ls -la "$FW" | grep -iE "webp|sharpyuv|brotli" || true
           ls -la dist/
 
       - name: sign and notarize (skipped when secrets absent)
@@ -127,13 +173,16 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KCPW" "$KC" >/dev/null
           security list-keychains -d user -s "$KC" login.keychain-db
 
-          # sign nested Mach-O executables first (embedded wownerod etc.),
-          # then frameworks, then the bundle — all hardened-runtime + timestamp
+          # Sign inside-out: every Mach-O NOT inside a .framework (embedded
+          # wownerod/tor, the bundled webp/sharpyuv/brotli dylibs, and the
+          # image-format plugins whose signatures install_name_tool just
+          # invalidated — keyed on `file`, not exec bit, since plugins/dylibs
+          # aren't +x), then each Qt framework as a unit, then the bundle.
           SIGN() { codesign --force --options runtime --timestamp --keychain "$KC" \
                      --sign "$APPLE_SIGNING_IDENTITY" "$@"; }
-          find dist/Wowlet.app -type f -perm +111 ! -path "*/Frameworks/*" \
+          find dist/Wowlet.app -type f ! -path "*/*.framework/*" \
             | while read -r f; do file "$f" | grep -q Mach-O && SIGN "$f" || true; done
-          find dist/Wowlet.app/Contents/Frameworks -maxdepth 1 \( -name "*.framework" -o -name "*.dylib" \) 2>/dev/null \
+          find dist/Wowlet.app/Contents/Frameworks -maxdepth 1 -name "*.framework" 2>/dev/null \
             | while read -r fw; do SIGN "$fw"; done
           SIGN dist/Wowlet.app
           codesign --verify --deep --strict dist/Wowlet.app
