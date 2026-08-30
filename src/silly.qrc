@@ -1,0 +1,17 @@
+<!DOCTYPE RCC><RCC version="1.0">
+  <qresource prefix="/">
+    <file alias="silly/l11.gif">assets/images/silly/l11.gif</file>
+    <file alias="silly/l12.gif">assets/images/silly/l12.gif</file>
+    <file alias="silly/l19.gif">assets/images/silly/l19.gif</file>
+    <file alias="silly/l1.gif">assets/images/silly/l1.gif</file>
+    <file alias="silly/l21.gif">assets/images/silly/l21.gif</file>
+    <file alias="silly/l22.gif">assets/images/silly/l22.gif</file>
+    <file alias="silly/l26.gif">assets/images/silly/l26.gif</file>
+    <file alias="silly/l27.gif">assets/images/silly/l27.gif</file>
+    <file alias="silly/l3.gif">assets/images/silly/l3.gif</file>
+    <file alias="silly/l5.gif">assets/images/silly/l5.gif</file>
+    <file alias="silly/l6.gif">assets/images/silly/l6.gif</file>
+    <file alias="silly/l7.gif">assets/images/silly/l7.gif</file>
+    <file alias="silly/loading.gif">assets/images/silly/loading.gif</file>
+  </qresource>
+</RCC>

@@ -34,7 +34,7 @@ if (CHECK_UPDATES)
     add_subdirectory(openpgp)
 endif()
 
-qt_add_resources(RESOURCES assets.qrc assets_tor.qrc assets_wownerod.qrc assets_docs.qrc mining.qrc)
+qt_add_resources(RESOURCES assets.qrc assets_tor.qrc assets_wownerod.qrc assets_docs.qrc mining.qrc silly.qrc)
 
 # Compile source files (.h/.cpp)
 file(GLOB SOURCE_FILES
