@@ -81,6 +81,12 @@ jobs:
       - name: build
         run: |
           export PATH="/opt/homebrew/bin:$PATH"
+          # clang does not search /opt/homebrew/include by default; the feather
+          # target pulls monero headers that include boost, and modern Boost's
+          # CMake config leaves Boost_INCLUDE_DIRS empty. CPATH/LIBRARY_PATH make
+          # every linked brew header/lib findable without per-dep flag surgery.
+          export CPATH="$(brew --prefix)/include"
+          export LIBRARY_PATH="$(brew --prefix)/lib"
           mkdir -p build && cd build
           cmake -DWITH_SCANNER=OFF -DUSE_DEVICE_TREZOR=OFF -DWOWNEROD_DIR=/tmp/wownerod-embed -DTOR_DIR=/tmp/tor-embed -DTOR_VERSION="$TOR_VERSION" -DCMAKE_PREFIX_PATH="$(brew --prefix qt)" ..
           cmake --build . -j "$(sysctl -n hw.ncpu)"
