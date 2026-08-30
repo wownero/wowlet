@@ -1,0 +1,218 @@
+name: macos build (gitea self-hosted)
+
+# Runs ONLY on the Gitea mac runner (GitHub ignores .gitea/workflows).
+# Dispatch-only: the mac runner has capacity 1 and also serves the Hash Bags
+# iOS lane, so macOS wowlet builds are an explicit button, not a push hook.
+# All build state lands under the runner's work dir, which lives on
+# /Volumes/DataSSD (never backed up: the fleet backup pulls an allowlist of
+# gitea data only).
+#
+# Signing/notarization uses the SAME seven secrets as the smirk-monorepo
+# desktop lane, set by ~/keys/suchsoftware/set-gitea-desktop-secrets.sh:
+#   APPLE_CERTIFICATE (b64 Developer ID Application .p12),
+#   APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY, APPLE_TEAM_ID,
+#   APPLE_API_ISSUER, APPLE_API_KEY, APPLE_API_KEY_P8_BASE64 (notarytool).
+# If APPLE_CERTIFICATE is unset the build ships unsigned instead of failing.
+
+on: [workflow_dispatch]
+
+jobs:
+  build-macos:
+    name: "macOS (brew, native)"
+    runs-on: macos-latest
+    env:
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+      APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+      APPLE_API_KEY_P8_BASE64: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: install dependencies (brew)
+        run: |
+          export PATH="/opt/homebrew/bin:$PATH"
+          set +o pipefail   # yes(1) takes SIGPIPE when brew has nothing to ask
+          export NONINTERACTIVE=1 HOMEBREW_NO_ENV_HINTS=1 HOMEBREW_NO_INSTALL_UPGRADE=1
+          yes | brew install --quiet qt libsodium libzip qrencode unbound cmake boost hidapi openssl expat protobuf pkgconfig zxing-cpp
+
+      - name: fetch wownerod to embed
+        run: |
+          set -e
+          ARCH=$(uname -m)
+          case "$ARCH" in
+            arm64) WOWTAR=wownero-aarch64-apple-darwin11-v0.11.4.0.tar.bz2 ;;
+            *)     WOWTAR=wownero-x86_64-apple-darwin11-v0.11.4.0.tar.bz2 ;;
+          esac
+          mkdir -p /tmp/wownerod-embed /tmp/wow-extract
+          curl -L -o /tmp/wownero.tar.bz2 \
+            "https://github.com/wownero/wownero-codeberg-mirror/releases/download/v0.11.4.0/$WOWTAR"
+          # /tmp is a symlink on macOS — find(1) won't descend it as a bare argument
+          tar xjf /tmp/wownero.tar.bz2 -C /tmp/wow-extract
+          find /tmp/wow-extract -name wownerod -type f -exec cp {} /tmp/wownerod-embed/ \;
+          chmod +x /tmp/wownerod-embed/wownerod
+          ls -la /tmp/wownerod-embed
+
+      - name: fetch tor to embed
+        run: |
+          set -e
+          ARCH=$(uname -m)
+          case "$ARCH" in
+            arm64) TORTAR=tor-expert-bundle-macos-aarch64-15.0.tar.gz ;;
+            *)     TORTAR=tor-expert-bundle-macos-x86_64-15.0.tar.gz ;;
+          esac
+          mkdir -p /tmp/teb /tmp/tor-embed
+          curl -L -o /tmp/teb.tgz "https://archive.torproject.org/tor-package-archive/torbrowser/15.0/$TORTAR"
+          tar xzf /tmp/teb.tgz -C /tmp/teb
+          cp /tmp/teb/tor/tor /tmp/teb/tor/libevent-*.dylib /tmp/tor-embed/
+          # tor ships UNSIGNED; arm64 macOS SIGKILLs unsigned binaries. Ad-hoc sign
+          # BEFORE embedding — the signature travels inside the file, so the copy
+          # the app unpacks at runtime on user machines is runnable too.
+          codesign -s - -f /tmp/tor-embed/tor /tmp/tor-embed/libevent-*.dylib
+          chmod +x /tmp/tor-embed/tor
+          # expert-bundle RELEASE number (15.0) is NOT the tor version — derive it
+          TORVER=$(/tmp/tor-embed/tor --version | grep -oE '[0-9]+(\.[0-9]+){3}' | head -1)
+          echo "TOR_VERSION=$TORVER" >> "$GITHUB_ENV"
+          echo "embedded tor version: $TORVER"
+
+      - name: build
+        run: |
+          export PATH="/opt/homebrew/bin:$PATH"
+          # clang does not search /opt/homebrew/include by default; the feather
+          # target pulls monero headers that include boost, and modern Boost's
+          # CMake config leaves Boost_INCLUDE_DIRS empty. CPATH/LIBRARY_PATH make
+          # every linked brew header/lib findable without per-dep flag surgery.
+          export CPATH="$(brew --prefix)/include"
+          export LIBRARY_PATH="$(brew --prefix)/lib"
+          mkdir -p build && cd build
+          cmake -DWITH_SCANNER=OFF -DUSE_DEVICE_TREZOR=OFF -DBoost_USE_STATIC_LIBS=ON -DWOWNEROD_DIR=/tmp/wownerod-embed -DTOR_DIR=/tmp/tor-embed -DTOR_VERSION="$TOR_VERSION" -DCMAKE_PREFIX_PATH="$(brew --prefix qt)" ..
+          cmake --build . -j "$(sysctl -n hw.ncpu)"
+
+      - name: package app bundle
+        run: |
+          set -e
+          cd build
+          APP=$(find . -maxdepth 3 -name "*.app" -type d | head -1)
+          [ -n "$APP" ] || { echo "no .app bundle produced"; ls -la bin/; exit 1; }
+          mkdir -p dist
+          cp -R "$APP" dist/Wowlet.app
+          # cmake never places the icon in the bundle (upstream only copies it
+          # for the dormant `installed/` layout)
+          mkdir -p dist/Wowlet.app/Contents/Resources
+          cp ../src/assets/images/appicons/appicon.icns dist/Wowlet.app/Contents/Resources/
+          # bundle Qt frameworks/plugins so the app runs off-machine
+          /opt/homebrew/opt/qt/bin/macdeployqt dist/Wowlet.app
+
+          # macdeployqt bundles Qt frameworks but not the plain-dylib brew deps
+          # of Qt's image plugins (libwebp/libsharpyuv/libbrotli...), which are
+          # referenced as @rpath/lib*.dylib. Without them a clean (no-Homebrew)
+          # Mac can't load those image formats. Qt frameworks use a different
+          # ref form (@rpath/Qt*.framework/...), so keying strictly on
+          # `@rpath/*.dylib` bundles the stragglers WITHOUT touching Qt.
+          # Several passes converge (a bundled lib pulls in further deps).
+          APP=dist/Wowlet.app
+          FW="$APP/Contents/Frameworks"
+          mkdir -p "$FW"
+          for pass in 1 2 3 4; do
+            while IFS= read -r macho; do
+              file "$macho" | grep -q Mach-O || continue
+              chmod u+w "$macho"
+              otool -L "$macho" | awk 'NR>1{print $1}' | while IFS= read -r dep; do
+                case "$dep" in
+                  @rpath/*.dylib)
+                    name=$(basename "$dep")
+                    if [ -f "$FW/$name" ]; then
+                      install_name_tool -change "$dep" "@executable_path/../Frameworks/$name" "$macho" 2>/dev/null || true
+                      continue
+                    fi
+                    real=$(find /opt/homebrew/lib /opt/homebrew/opt/*/lib -maxdepth 1 -name "$name" 2>/dev/null | head -1)
+                    if [ -n "$real" ]; then
+                      cp -n "$real" "$FW/$name"
+                      chmod u+w "$FW/$name"
+                      install_name_tool -id "@executable_path/../Frameworks/$name" "$FW/$name" 2>/dev/null || true
+                      install_name_tool -change "$dep" "@executable_path/../Frameworks/$name" "$macho" 2>/dev/null || true
+                    fi
+                    ;;
+                esac
+              done
+            done < <(find "$APP" -type f)
+          done
+
+          # Fail if any @rpath/*.dylib (non-Qt) remains unresolved in the bundle
+          leftover=$(find "$APP" -type f | while IFS= read -r m; do
+            file "$m" | grep -q Mach-O || continue
+            otool -L "$m" | awk 'NR>1{print $1}' | grep -E '^@rpath/[^/]+\.dylib$' || true
+          done | sort -u)
+          if [ -n "$leftover" ]; then
+            echo "UNBUNDLED @rpath dylibs remain:"; echo "$leftover"; exit 1
+          fi
+          echo "all plain-dylib deps bundled"
+          ls -la "$FW" | grep -iE "webp|sharpyuv|brotli" || true
+          ls -la dist/
+
+      - name: sign and notarize (skipped when secrets absent)
+        run: |
+          set -e
+          cd build
+          if [ -z "$APPLE_CERTIFICATE" ]; then
+            echo "APPLE_CERTIFICATE not set — shipping UNSIGNED build"
+            exit 0
+          fi
+          KC=/tmp/wowlet-ci.keychain-db
+          KCPW=$(/usr/bin/uuidgen)
+          echo "$KCPW" > /tmp/wowlet-ci-kcpw   # for the cleanup step only
+          security create-keychain -p "$KCPW" "$KC"
+          security set-keychain-settings -lut 3600 "$KC"
+          security unlock-keychain -p "$KCPW" "$KC"
+          printf '%s' "$APPLE_CERTIFICATE" | base64 -d > /tmp/dev_id.p12
+          security import /tmp/dev_id.p12 -k "$KC" -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KCPW" "$KC" >/dev/null
+          security list-keychains -d user -s "$KC" login.keychain-db
+
+          # Sign inside-out: every Mach-O NOT inside a .framework (embedded
+          # wownerod/tor, the bundled webp/sharpyuv/brotli dylibs, and the
+          # image-format plugins whose signatures install_name_tool just
+          # invalidated — keyed on `file`, not exec bit, since plugins/dylibs
+          # aren't +x), then each Qt framework as a unit, then the bundle.
+          SIGN() { codesign --force --options runtime --timestamp --keychain "$KC" \
+                     --sign "$APPLE_SIGNING_IDENTITY" "$@"; }
+          find dist/Wowlet.app -type f ! -path "*/*.framework/*" \
+            | while read -r f; do file "$f" | grep -q Mach-O && SIGN "$f" || true; done
+          find dist/Wowlet.app/Contents/Frameworks -maxdepth 1 -name "*.framework" 2>/dev/null \
+            | while read -r fw; do SIGN "$fw"; done
+          SIGN dist/Wowlet.app
+          codesign --verify --deep --strict dist/Wowlet.app
+
+          printf '%s' "$APPLE_API_KEY_P8_BASE64" | base64 -d > /tmp/notary.p8
+          ditto -c -k --keepParent dist/Wowlet.app /tmp/wowlet-notarize.zip
+          xcrun notarytool submit /tmp/wowlet-notarize.zip \
+            --key /tmp/notary.p8 --key-id "$APPLE_API_KEY" --issuer "$APPLE_API_ISSUER" \
+            --wait --timeout 30m
+          xcrun stapler staple dist/Wowlet.app
+          echo "signed + notarized + stapled"
+
+      - name: zip artifact
+        run: |
+          set -e
+          cd build/dist
+          ditto -c -k --keepParent Wowlet.app ../wowlet-macos-$(uname -m).zip
+          ls -la ../wowlet-macos-*.zip
+
+      - name: cleanup signing material
+        if: always()
+        run: |
+          if [ -f /tmp/wowlet-ci-kcpw ]; then
+            security delete-keychain /tmp/wowlet-ci.keychain-db || true
+          fi
+          rm -f /tmp/dev_id.p12 /tmp/notary.p8 /tmp/wowlet-ci-kcpw /tmp/wowlet-notarize.zip
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: wowlet-macos
+          path: build/wowlet-macos-*.zip
+          retention-days: 14
