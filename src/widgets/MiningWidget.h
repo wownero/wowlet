@@ -15,13 +15,17 @@
 class MiningBackend : public QObject {
 Q_OBJECT
     Q_PROPERTY(int daemonMiningState READ daemonMiningState NOTIFY daemonMiningStateChanged)
+    Q_PROPERTY(bool reducedMotion READ reducedMotion NOTIFY reducedMotionChanged)
 public:
     explicit MiningBackend(QObject *parent = nullptr) : QObject(parent) {}
     int daemonMiningState() const { return m_state; }
     void setState(int s) { if (m_state != s) { m_state = s; emit daemonMiningStateChanged(); } }
+    bool reducedMotion() const { return m_reducedMotion; }
+    void setReducedMotion(bool r) { if (m_reducedMotion != r) { m_reducedMotion = r; emit reducedMotionChanged(); } }
 
 signals:
     void daemonMiningStateChanged();
+    void reducedMotionChanged();
     void daemonOutput(const QString &line);
     void syncStatus(int from, int to, int pct);
     void uptimeChanged(const QString &uptime);
@@ -29,6 +33,7 @@ signals:
 
 private:
     int m_state = 0;   // 0:idle 1:startup 2:syncing 3:mining
+    bool m_reducedMotion = false;
 };
 
 // wowlet: the pixel-art mining tab. Hosts mining.qml and wires its pick-axe to the wallet's solo

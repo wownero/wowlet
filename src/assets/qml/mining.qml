@@ -35,6 +35,7 @@ Rectangle {
     }
 
     AnimatedImage {
+        playing: !mining.reducedMotion   // wowlet: respect reduced-motion
         //visible: mining.daemonMiningState === 0
         source: "qrc:/mining/bg1.gif"
         fillMode: Image.PreserveAspectCrop
@@ -195,6 +196,7 @@ Rectangle {
                 }
 
                 AnimatedImage {
+                    playing: !mining.reducedMotion   // wowlet: respect reduced-motion
                     visible: mining.daemonMiningState !== 0
                     source: "qrc:/mining/mining.webp"
                     fillMode: Image.PreserveAspectCrop
@@ -436,6 +438,7 @@ Rectangle {
                 smooth: false
 
                  AnimatedImage {
+                     playing: !mining.reducedMotion   // wowlet: respect reduced-motion
                     source: mining.daemonMiningState === 0 ? "qrc:/assets/images/dog_sitting.gif" : "qrc:/assets/images/dog_running.gif"
                     width: 80
                     height: 60
@@ -546,6 +549,7 @@ Rectangle {
                     }
 
                     AnimatedImage {
+                        playing: !mining.reducedMotion   // wowlet: respect reduced-motion
                         visible: mining.daemonMiningState !== 0
                         source: "qrc:/mining/elmo.gif"
                         width: 106

@@ -27,6 +27,13 @@ PageMenu::PageMenu(WizardFields *fields, WalletKeysFilesModel *wallets, QWidget 
     });
 
     QString settingsSkin = conf()->get(Config::skin).toString();
+
+    // wowlet: reduced-motion opt-out, surfaced on first run (unchecked = playful
+    // animations on, the default). Also lives in Settings → Appearance.
+    ui->checkBox_reducedMotion->setChecked(conf()->get(Config::reducedMotion).toBool());
+    connect(ui->checkBox_reducedMotion, &QCheckBox::toggled, [](bool toggled){
+        conf()->set(Config::reducedMotion, toggled);
+    });
 }
 
 void PageMenu::initializePage() {

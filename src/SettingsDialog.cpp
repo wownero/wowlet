@@ -139,6 +139,12 @@ void Settings::setupAppearanceTab() {
        emit updateBalance();
     });
 
+    // [Prefer reduced motion] wowlet: gate playful animations (mining tab, loaders, ...)
+    ui->checkBox_reducedMotion->setChecked(conf()->get(Config::reducedMotion).toBool());
+    connect(ui->checkBox_reducedMotion, &QCheckBox::toggled, [this](bool toggled){
+       conf()->set(Config::reducedMotion, toggled);
+    });
+
     // [Preferred fiat currency]
     QStringList availableFiatCurrencies = appData()->prices.rates.keys();
     for (const auto &currency : availableFiatCurrencies) {

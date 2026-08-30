@@ -11,6 +11,8 @@
 #include <QThread>
 #include <QDateTime>
 
+#include "utils/config.h"
+
 static QString formatUptime(qint64 secs) {
     return QString("%1:%2:%3")
         .arg(secs / 3600, 2, 10, QChar('0'))
@@ -29,6 +31,7 @@ MiningWidget::MiningWidget(Wallet *wallet, QWidget *parent)
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(m_quickWidget);
 
+    m_backend->setReducedMotion(conf()->get(Config::reducedMotion).toBool());
     m_quickWidget->rootContext()->setContextProperty("mining", m_backend);
     m_quickWidget->setResizeMode(QQuickWidget::SizeRootObjectToView);
     m_quickWidget->setSource(QUrl("qrc:/qml/mining.qml"));

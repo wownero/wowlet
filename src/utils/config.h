@@ -29,6 +29,7 @@ public:
         homeWidget,
         donateBeg,
         showHistorySyncNotice,
+        reducedMotion, // wowlet: disable playful animations (accessibility / preference)
 
         geometry,
         windowState,

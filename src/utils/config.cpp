@@ -30,6 +30,7 @@ static const QHash<Config::ConfigKey, ConfigDirective> configStrings = {
         {Config::homeWidget,{QS("homeWidget"), "ccs"}},
         {Config::donateBeg,{QS("donateBeg"), 1}},
         {Config::showHistorySyncNotice, {QS("showHistorySyncNotice"), true}},
+        {Config::reducedMotion, {QS("reducedMotion"), false}},
 
         {Config::geometry, {QS("geometry"), {}}},
         {Config::windowState, {QS("windowState"), {}}},

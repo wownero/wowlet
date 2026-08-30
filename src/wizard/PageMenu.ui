@@ -193,6 +193,13 @@
     </widget>
    </item>
    <item>
+    <widget class="QCheckBox" name="checkBox_reducedMotion">
+     <property name="text">
+      <string>Prefer reduced motion (disable playful animations)</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <item>
       <widget class="QLabel" name="label_version">
