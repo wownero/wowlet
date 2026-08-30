@@ -271,7 +271,7 @@ Rectangle {
 
                                     Text {
                                         text: "Block Height"
-                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.bottom: parent.bottom
                                         anchors.left: parent.left
                                         anchors.leftMargin: 8
                                         font.pointSize: 14
@@ -291,7 +291,8 @@ Rectangle {
                                         text: "-"
                                         anchors.fill: parent
                                         anchors.leftMargin: 8
-                                        verticalAlignment: Text.AlignVCenter
+                                        anchors.topMargin: 2
+                                        verticalAlignment: Text.AlignTop
                                         fontSizeMode: Text.HorizontalFit
                                         minimumPointSize: 9
                                         font.pointSize: 14
@@ -314,7 +315,7 @@ Rectangle {
 
                                     Text {
                                         text: "Sync Progress"
-                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.bottom: parent.bottom
                                         anchors.left: parent.left
                                         anchors.leftMargin: 8
                                         font.pointSize: 14
@@ -332,7 +333,8 @@ Rectangle {
                                     Text {
                                         id: syncPctText
                                         text: "-"
-                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.top: parent.top
+                                        anchors.topMargin: 2
                                         anchors.left: parent.left
                                         anchors.leftMargin: 8
                                         font.pointSize: 14
