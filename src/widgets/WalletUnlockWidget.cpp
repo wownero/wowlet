@@ -9,6 +9,7 @@
 
 #include "utils/Utils.h"
 #include "libwalletqt/Wallet.h"
+#include "widgets/SceneWidget.h"
 
 WalletUnlockWidget::WalletUnlockWidget(QWidget *parent, Wallet *wallet)
         : QWidget(parent)
@@ -17,6 +18,13 @@ WalletUnlockWidget::WalletUnlockWidget(QWidget *parent, Wallet *wallet)
 {
     ui->setupUi(this);
     this->reset();
+
+    // wowlet: ambient scene banner above the unlock form (freezes itself into a
+    // still when "Prefer reduced motion" is set).
+    auto *scene = new SceneWidget(this);
+    scene->setMinimumHeight(120);
+    scene->setMaximumHeight(140);
+    ui->verticalLayout->insertWidget(0, scene);
 
     ui->buttonBox->button(QDialogButtonBox::Ok)->setAutoDefault(true);
 

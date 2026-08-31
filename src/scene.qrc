@@ -1,0 +1,10 @@
+<!DOCTYPE RCC><RCC version="1.0">
+  <qresource prefix="/">
+    <file alias="qml/scene.qml">assets/qml/scene.qml</file>
+    <file alias="scene/dog2.gif">assets/images/scene/dog2.gif</file>
+    <file alias="scene/dog.gif">assets/images/scene/dog.gif</file>
+    <file alias="scene/flyingmoney.gif">assets/images/scene/flyingmoney.gif</file>
+    <file alias="scene/goldcoin.gif">assets/images/scene/goldcoin.gif</file>
+    <file alias="scene/grass.png">assets/images/scene/grass.png</file>
+  </qresource>
+</RCC>
