@@ -155,6 +155,12 @@ jobs:
           name: wowlet-x86_64-windows-unsigned
           path: stage
 
+      - name: keep the unsigned tree for the reproducible archive
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Copy-Item 'stage' 'unsigned' -Recurse -Force
+
       - name: queue wowlet.exe for the signing broker and wait
         shell: powershell
         run: |
@@ -204,16 +210,25 @@ jobs:
           }
           Write-Host "SHA256 $((Get-FileHash 'stage\wowlet.exe' -Algorithm SHA256).Hash)"
 
-      - name: package the signed zip
+      - name: package both zips
+        # Two archives ship, deliberately. Authenticode mutates the exe, so a
+        # signed binary can never byte-match what someone reproduces from
+        # source. The unsigned archive stays reproducible and is what verifiers
+        # check; the signed one is what a normal user should download. Both
+        # hashes go in the PGP-signed hashes.txt.
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          Compress-Archive -Path 'stage\*' -DestinationPath 'wowlet-x86_64-windows.zip' -Force
-          Get-ChildItem 'wowlet-x86_64-windows.zip' | Format-List Name, Length
+          Compress-Archive -Path 'unsigned\*' -DestinationPath 'wowlet-x86_64-windows-unsigned.zip' -Force
+          Compress-Archive -Path 'stage\*'    -DestinationPath 'wowlet-x86_64-windows.zip' -Force
+          Get-ChildItem 'wowlet-x86_64-windows*.zip' |
+            ForEach-Object { "{0}  {1}  {2}" -f $_.Name, $_.Length, (Get-FileHash $_.FullName -Algorithm SHA256).Hash }
 
-      - name: upload signed Windows zip
+      - name: upload Windows zips
         uses: actions/upload-artifact@v3
         with:
           name: wowlet-x86_64-windows
-          path: wowlet-x86_64-windows.zip
+          path: |
+            wowlet-x86_64-windows.zip
+            wowlet-x86_64-windows-unsigned.zip
           if-no-files-found: error

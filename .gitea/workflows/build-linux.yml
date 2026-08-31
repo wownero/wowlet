@@ -1,0 +1,149 @@
+name: linux appimage (gitea self-hosted)
+
+# Runs ONLY on Gitea (GitHub ignores .gitea/workflows), in the private Builds
+# repository. Gitea is master; GitHub is a mirror and a release surface.
+#
+# Unlike the Windows lane, which builds a static toolchain of its own through
+# contrib/depends, the x86_64 AppImage links against the host's Qt6. Those
+# dependencies are owned by such-fleet (roles/wowlet_build_host) rather than
+# installed here: a workflow that apt-installs needs sudo on a shared runner and
+# makes the build host's contents a property of whichever job ran last.
+#
+# Dispatch-only. The runner is capacity 1 and shared with the fleet gates.
+
+on: [workflow_dispatch]
+
+jobs:
+  appimage:
+    name: "Linux x86_64 (host Qt6 AppImage)"
+    runs-on: ubuntu-latest      # gitea label ubuntu-latest:host -> deb, host mode
+    steps:
+      - name: verify the build host has its dependencies
+        run: |
+          missing=0
+          for t in cmake make curl bzip2 git patchelf pkg-config qmake6; do
+            command -v "$t" >/dev/null || { echo "MISSING TOOL: $t"; missing=1; }
+          done
+          for h in /usr/include/boost/version.hpp; do
+            [ -f "$h" ] || { echo "MISSING HEADER: $h"; missing=1; }
+          done
+          pkg-config --exists libsodium || { echo "MISSING: libsodium"; missing=1; }
+          [ "$missing" = 0 ] || {
+            echo "Run playbooks/wowlet-build-host.yml in such-fleet; do not apt-install from CI."
+            exit 1; }
+          echo "qt $(qmake6 -query QT_VERSION)"; nproc; free -g | head -2
+
+      - name: configure git
+        run: git config --global --add safe.directory '*'
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: fetch wownerod to embed
+        run: |
+          rm -rf /tmp/wownerod-embed && mkdir -p /tmp/wownerod-embed
+          curl -fL -o /tmp/wownero.tar.bz2 \
+            https://github.com/wownero/wownero-codeberg-mirror/releases/download/v0.11.4.0/wownero-x86_64-linux-gnu-v0.11.4.0.tar.bz2
+          rm -rf /tmp/wow-x && mkdir -p /tmp/wow-x
+          tar xjf /tmp/wownero.tar.bz2 -C /tmp/wow-x
+          find /tmp/wow-x -name wownerod -type f -exec cp {} /tmp/wownerod-embed/ \;
+          chmod +x /tmp/wownerod-embed/wownerod
+          ls -la /tmp/wownerod-embed
+
+      - name: fetch tor to embed
+        run: |
+          rm -rf /tmp/tor-embed && mkdir -p /tmp/tor-embed
+          curl -fL -o /tmp/teb.tgz \
+            https://archive.torproject.org/tor-package-archive/torbrowser/15.0/tor-expert-bundle-linux-x86_64-15.0.tar.gz
+          rm -rf /tmp/teb && mkdir -p /tmp/teb && tar xzf /tmp/teb.tgz -C /tmp/teb
+          cp /tmp/teb/tor/tor /tmp/teb/tor/libssl.so.3 /tmp/teb/tor/libevent-2.1.so.7 \
+             /tmp/teb/tor/libcrypto.so.3 /tmp/tor-embed/
+          # The expert bundle's tor carries no rpath; point it and its libs at
+          # $ORIGIN so the embedded copy resolves them from the extract dir on
+          # any distro.
+          for f in tor libssl.so.3 libevent-2.1.so.7 libcrypto.so.3; do
+            patchelf --set-rpath '$ORIGIN' /tmp/tor-embed/$f
+          done
+          chmod +x /tmp/tor-embed/tor
+
+      - name: build
+        run: |
+          # TOR_VERSION must EXACTLY match `tor --version` of the embedded
+          # binary, or TorManager::unpackBins() sees embedded > unpacked and
+          # rewrites Tor on every launch. The bundle's release number (15.0) is
+          # not its tor version, so derive it.
+          TORVER=$(/tmp/tor-embed/tor --version | grep -oE '[0-9]+(\.[0-9]+){3}' | head -1)
+          echo "embedded tor version: $TORVER"
+          # ARCH=x86-64, never native: the build host's CPU is newer than many
+          # users' and native bakes in unsupported instructions -> SIGILL.
+          cmake -S . -B build \
+            -DWITH_SCANNER=OFF \
+            -DARCH=x86-64 \
+            -DWOWNEROD_DIR=/tmp/wownerod-embed \
+            -DTOR_DIR=/tmp/tor-embed \
+            -DTOR_VERSION="$TORVER"
+          cmake --build build -j6
+          ls -la build/bin/
+
+      - name: package AppImage
+        run: |
+          rm -rf AppDir
+          mkdir -p AppDir/usr/bin AppDir/usr/share/applications \
+                   AppDir/usr/share/icons/hicolor/256x256/apps
+          cp build/bin/feather AppDir/usr/bin/wowlet
+          chmod +x AppDir/usr/bin/wowlet
+          cp src/assets/wowlet.desktop AppDir/usr/share/applications/wowlet.desktop
+          cp src/assets/images/appicons/256x256.png \
+             AppDir/usr/share/icons/hicolor/256x256/apps/wowlet.png
+
+          curl -sL -o linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          curl -sL -o linuxdeploy-plugin-qt https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          curl -sL -o appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x linuxdeploy linuxdeploy-plugin-qt appimagetool
+
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          export QMAKE="$(command -v qmake6)"
+          export EXTRA_QT_PLUGINS="svg;multimedia;tls"
+          export QML_SOURCES_PATHS="$PWD/src/assets/qml"
+          export PATH="$PWD:$PATH"
+
+          ./linuxdeploy --appdir AppDir --plugin qt \
+            -d AppDir/usr/share/applications/wowlet.desktop \
+            -i AppDir/usr/share/icons/hicolor/256x256/apps/wowlet.png
+
+          # qmlimportscanner reads only the `import` lines in our QML; it does
+          # not follow a module's own qmldir depends/default-import chain, so
+          # transitive modules (QtQuick -> QtQml.WorkerScript/Models) are
+          # silently skipped. Blanket-copy the trees, then resolve each copied
+          # plugin's Qt libs ourselves -- linuxdeploy only does that for modules
+          # it deployed, not ones we copied by hand.
+          QMLDIR=$(qmake6 -query QT_INSTALL_QML)
+          mkdir -p AppDir/usr/qml AppDir/usr/lib
+          for m in QtQuick QtQml; do cp -rn "$QMLDIR/$m" AppDir/usr/qml/ 2>/dev/null || true; done
+          find AppDir/usr/qml -name '*.so' -print0 | while IFS= read -r -d '' so; do
+            ldd "$so" 2>/dev/null | awk '/=> \//{print $3}' \
+              | grep -E '/(libQt6|libicu|libpcre2|libdouble-conversion|libzstd|libb2|libpng|libharfbuzz|libmd4c|libglib|libgraphite)' \
+              | while read -r lib; do cp -L -n "$lib" AppDir/usr/lib/ 2>/dev/null || true; done
+          done
+          echo "=== qt.conf ==="; cat AppDir/usr/bin/qt.conf
+
+          # Guard: mining.qml must not pull in QtQuick.Controls. If a future
+          # edit re-adds a Controls type this fails loudly instead of shipping
+          # a white mining tab.
+          if grep -q 'import QtQuick.Controls' src/assets/qml/mining.qml; then
+            echo "ERROR: mining.qml imports QtQuick.Controls again." >&2
+            exit 1
+          fi
+
+          ARCH=x86_64 ./appimagetool AppDir wowlet-x86_64.AppImage
+          ls -la wowlet-x86_64.AppImage
+
+      - name: upload wowlet AppImage
+        # v3: Gitea implements the older artifact protocol and rejects
+        # @actions/artifact v2 clients (upload-artifact@v4+) as unsupported.
+        uses: actions/upload-artifact@v3
+        with:
+          name: wowlet-x86_64-linux-AppImage
+          path: wowlet-x86_64.AppImage
+          if-no-files-found: error
