@@ -135,7 +135,10 @@ jobs:
           ls -la stage stage/tor
 
       - name: upload unsigned staging tree
-        uses: actions/upload-artifact@v4
+        # v3, not v4: Gitea Actions implements the older artifact protocol and
+        # rejects @actions/artifact v2 clients with
+        # "GHESNotSupportedError ... not currently supported on GHES".
+        uses: actions/upload-artifact@v3
         with:
           name: wowlet-x86_64-windows-unsigned
           path: stage/
@@ -147,7 +150,7 @@ jobs:
     runs-on: windows             # gitea label windows:host -> desktop-iim2fs2
     steps:
       - name: download unsigned staging tree
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           name: wowlet-x86_64-windows-unsigned
           path: stage
@@ -209,7 +212,7 @@ jobs:
           Get-ChildItem 'wowlet-x86_64-windows.zip' | Format-List Name, Length
 
       - name: upload signed Windows zip
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: wowlet-x86_64-windows
           path: wowlet-x86_64-windows.zip
