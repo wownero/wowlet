@@ -1,0 +1,216 @@
+name: windows build + sign (gitea self-hosted)
+
+# Runs ONLY on Gitea (GitHub ignores .gitea/workflows), in the private Builds
+# repository. Gitea is master; GitHub is a mirror and a release surface.
+#
+# Two jobs on two different machines, and that split is the whole point:
+#
+#   build  -> `deb`, which advertises windows-latest:host because it carries the
+#             MinGW cross-compiler. Produces an UNSIGNED wowlet.exe.
+#   sign   -> `desktop-iim2fs2` (windows:host), the only machine with the EV
+#             code-signing token plugged into it.
+#
+# The signing host does not sign in this job. The runner there is
+# NT SERVICE\act_runner, which cannot use the token: SafeNet holds the token
+# login per user, and the login is established interactively by an operator.
+# So the job queues the artifact for the signing broker that Fleet installs
+# (roles/windows_code_signing) and waits for it. CI never sees the key and never
+# sees the token password, so it can never spend one of the token's three
+# password attempts.
+#
+# Dispatch-only. Both runners are capacity 1 and shared with other lanes.
+
+on: [workflow_dispatch]
+
+env:
+  HOST: x86_64-w64-mingw32
+
+jobs:
+  build:
+    name: "Windows x86_64 (mingw cross, depends)"
+    runs-on: windows-latest      # gitea label windows-latest:host -> deb, host mode
+    steps:
+      - name: verify the cross toolchain is present
+        # Host mode on a shared fleet runner: this job installs nothing and
+        # needs no sudo. Fleet owns the toolchain; if something is missing the
+        # job says exactly what rather than half-building.
+        run: |
+          missing=0
+          for t in curl bzip2 unzip zip git cmake make ccache python3 perl pkg-config \
+                   x86_64-w64-mingw32-gcc-posix x86_64-w64-mingw32-g++-posix; do
+            command -v "$t" >/dev/null || { echo "MISSING: $t"; missing=1; }
+          done
+          # mingw32.mk needs the posix threading variant (std::thread/mutex/cv).
+          x86_64-w64-mingw32-g++ -v 2>&1 | grep -q 'Thread model: posix' || {
+            echo "MISSING: x86_64-w64-mingw32-g++ is not the posix threading variant"; missing=1; }
+          [ "$missing" = 0 ] || { echo "Fix the build host in such-fleet, not here."; exit 1; }
+          echo "toolchain ok"; nproc; free -g | head -2
+
+      - name: configure git
+        run: git config --global --add safe.directory '*'
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # depends is the slow part (static Qt6/boost/openssl/tor from source).
+      # Cache the source tarballs and the compiled packages so only a cold run
+      # pays the ~1h cost.
+      - name: restore depends sources cache
+        id: cache-sources
+        uses: actions/cache/restore@v4
+        with:
+          path: contrib/depends/sources
+          key: depends-sources-${{ hashFiles('contrib/depends/packages/*') }}
+          restore-keys: |
+            depends-sources-
+
+      - name: restore depends built cache (mingw)
+        id: cache-built
+        uses: actions/cache/restore@v4
+        with:
+          path: contrib/depends/built
+          key: depends-built-mingw32-${{ hashFiles('contrib/depends/packages/*', 'contrib/depends/hosts/*', 'contrib/depends/toolchain.cmake.in') }}
+          restore-keys: |
+            depends-built-mingw32-
+
+      - name: build depends (static Qt6 + tor + boost + openssl for mingw)
+        # -j4, not the -j2 the GitHub lane needs: that limit existed because a
+        # parallel static Qt6 compile OOMs a 16G hosted runner. deb has 30G.
+        run: make -C contrib/depends HOST="$HOST" -j4
+
+      # Save with if:always() so an expensive toolchain banks even when the
+      # later wowlet.exe build fails; the automatic post-save is skipped on
+      # job failure, which otherwise re-pays hours every time.
+      - name: save depends sources cache
+        if: always() && steps.cache-sources.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: contrib/depends/sources
+          key: depends-sources-${{ hashFiles('contrib/depends/packages/*') }}
+
+      - name: save depends built cache (mingw)
+        if: always() && steps.cache-built.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: contrib/depends/built
+          key: depends-built-mingw32-${{ hashFiles('contrib/depends/packages/*', 'contrib/depends/hosts/*', 'contrib/depends/toolchain.cmake.in') }}
+
+      - name: fetch wownerod.exe to embed
+        run: |
+          rm -rf /tmp/wownerod-embed && mkdir -p /tmp/wownerod-embed
+          curl -fL -o /tmp/wownero-win.zip \
+            https://github.com/wownero/wownero-codeberg-mirror/releases/download/v0.11.4.0/wownero-x86_64-w64-mingw32-v0.11.4.0.zip
+          # -j flattens the versioned subdir so wownerod.exe is a DIRECT child
+          # (WownerodQrcGenerator globs ${WOWNEROD_DIR}/* non-recursively).
+          unzip -o -j /tmp/wownero-win.zip 'wownero-x86_64-w64-mingw32-v0.11.4.0/wownerod.exe' -d /tmp/wownerod-embed
+          ls -la /tmp/wownerod-embed
+
+      - name: build wowlet.exe
+        run: |
+          rm -rf build && mkdir build && cd build
+          # ARCH=x86-64: portable baseline. wownero's CMake defaults ARCH=native,
+          # which under a cross compiler bakes the BUILD HOST's instructions into
+          # the Windows binary -> SIGILL on older CPUs.
+          cmake --toolchain "$GITHUB_WORKSPACE/contrib/depends/$HOST/share/toolchain.cmake" \
+            -DARCH=x86-64 \
+            -DWITH_SCANNER=OFF \
+            -DCHECK_UPDATES=OFF \
+            -DTOR_INSTALLED=On \
+            -DFEATHER_TARGET_TRIPLET="$HOST" \
+            -DWOWNEROD_DIR=/tmp/wownerod-embed \
+            ..
+          cmake --build . -j6
+          ls -la bin/
+
+      - name: stage the unsigned exe for signing
+        # The signing job needs the bare exe, not the zip: the broker signs one
+        # PE file at a time. The zip is assembled after signing so the published
+        # archive contains the signed binary.
+        run: |
+          mkdir -p stage/tor
+          cp build/bin/feather.exe stage/wowlet.exe
+          cp "contrib/depends/$HOST/Tor/tor.exe" stage/tor/tor.exe
+          (cp LICENSE stage/LICENSE.txt 2>/dev/null || cp COPYING stage/LICENSE.txt 2>/dev/null) || true
+          ls -la stage stage/tor
+
+      - name: upload unsigned staging tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: wowlet-x86_64-windows-unsigned
+          path: stage/
+          if-no-files-found: error
+
+  sign:
+    name: "Authenticode sign (hardware token broker)"
+    needs: build
+    runs-on: windows             # gitea label windows:host -> desktop-iim2fs2
+    steps:
+      - name: download unsigned staging tree
+        uses: actions/download-artifact@v4
+        with:
+          name: wowlet-x86_64-windows-unsigned
+          path: stage
+
+      - name: queue wowlet.exe for the signing broker and wait
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $queued = "wowlet-${env:GITHUB_RUN_ID}.exe"
+          $inPath  = "C:\signing\in\$queued"
+          $outPath = "C:\signing\out\$queued"
+
+          if (Test-Path 'C:\signing\SIGNING_LOCKED') {
+            Get-Content 'C:\signing\SIGNING_LOCKED'
+            throw "The signing broker's circuit breaker is tripped. An operator must clear it."
+          }
+
+          Copy-Item 'stage\wowlet.exe' $inPath -Force
+          Set-Content -LiteralPath "$inPath.ready" -Value $env:GITHUB_RUN_ID
+          Write-Host "queued $queued"
+
+          $deadline = (Get-Date).AddMinutes(10)
+          while ((Get-Date) -lt $deadline) {
+            if (Test-Path "$outPath.done") { break }
+            if (Test-Path 'C:\signing\SIGNING_LOCKED') {
+              Get-Content 'C:\signing\SIGNING_LOCKED'
+              throw "The broker tripped its circuit breaker while signing this artifact."
+            }
+            Start-Sleep -Seconds 5
+          }
+          if (-not (Test-Path "$outPath.done")) { throw "Timed out waiting for the signing broker." }
+
+          Move-Item $outPath 'stage\wowlet.exe' -Force
+          Remove-Item "$outPath.done" -Force -ErrorAction SilentlyContinue
+
+      - name: verify the published binary is signed and timestamped
+        # The broker verifies before releasing; this verifies again on the
+        # artifact that is actually about to ship. A signature or timestamp
+        # failure blocks distribution.
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sig = Get-AuthenticodeSignature 'stage\wowlet.exe'
+          $sig | Format-List Status, StatusMessage,
+            @{n='Signer';e={$_.SignerCertificate.Subject}},
+            @{n='TimeStamper';e={$_.TimeStamperCertificate.Subject}}
+          if ($sig.Status -ne 'Valid') { throw "Authenticode status is $($sig.Status)" }
+          if (-not $sig.TimeStamperCertificate) { throw "Signature carries no RFC 3161 timestamp" }
+          if ($sig.SignerCertificate.Subject -notmatch 'Such Software LLC') {
+            throw "Unexpected signer: $($sig.SignerCertificate.Subject)"
+          }
+          Write-Host "SHA256 $((Get-FileHash 'stage\wowlet.exe' -Algorithm SHA256).Hash)"
+
+      - name: package the signed zip
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Compress-Archive -Path 'stage\*' -DestinationPath 'wowlet-x86_64-windows.zip' -Force
+          Get-ChildItem 'wowlet-x86_64-windows.zip' | Format-List Name, Length
+
+      - name: upload signed Windows zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: wowlet-x86_64-windows
+          path: wowlet-x86_64-windows.zip
+          if-no-files-found: error
