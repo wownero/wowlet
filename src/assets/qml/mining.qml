@@ -92,7 +92,9 @@ Rectangle {
         RowLayout {
             spacing: 0
             Layout.fillWidth: true
+            Layout.fillHeight: false
             Layout.preferredHeight: 128
+            Layout.maximumHeight: 128
 
             Image {
                 source: "qrc:/mining/topleft.png"
@@ -212,7 +214,9 @@ Rectangle {
 
             ColumnLayout {
                 Layout.fillWidth: true
+                Layout.fillHeight: false
                 Layout.preferredHeight: 128
+                Layout.maximumHeight: 128
                 spacing: 0
 
                 Image {
@@ -233,130 +237,98 @@ Rectangle {
 
                 RowLayout {
                     spacing: 0
-                    Layout.fillHeight: true
+                    // Pinned: with fillHeight the console absorbed any slack in the
+                    // top bar, stretching the bezel and dropping the metrics out of
+                    // the bottom of the panel.
+                    Layout.fillHeight: false
                     Layout.preferredHeight: 102
+                    Layout.minimumHeight: 102
+                    Layout.maximumHeight: 102
 
                     Image {
                         Layout.preferredWidth: 5
-                        Layout.preferredHeight: parent.height
+                        Layout.preferredHeight: 102   // console bezel is a fixed 102px tall
                         source: "qrc:/mining/topright_left.png"
                         smooth: false
                     }
 
                     Image {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: parent.height
+                        Layout.preferredHeight: 102   // console bezel is a fixed 102px tall
                         source: "qrc:/mining/topright_middle.png"
                         fillMode: Image.TileHorizontally
                         smooth: false
 
-                        RowLayout {
+                        // The node metrics live inside the console's dark interior
+                        // band (rows 7..94 of the 102px topright_middle bezel).
+                        // Anchored at a fixed offset with fixed row heights so a
+                        // long value (a full block height) can never be pushed
+                        // out of the bottom of the console.
+                        Row {
                             anchors.top: parent.top
+                            anchors.topMargin: 16
                             anchors.left: parent.left
-                            anchors.leftMargin: 6
+                            anchors.leftMargin: 14
                             anchors.right: parent.right
                             anchors.rightMargin: 8
-                            anchors.topMargin: 4
+                            height: 52
+                            spacing: 24
 
-                            height: 60
-                            spacing: 16
+                            Column {
+                                width: Math.min(260, (parent.width - parent.spacing) / 2)
+                                spacing: 2
 
-                            ColumnLayout {
-                                Layout.minimumWidth: 200
-                                Layout.maximumWidth: 260
-                                Layout.fillHeight: true
-
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
-                                    color: "transparent"
-
-                                    Text {
-                                        text: "Block Height"
-                                        anchors.bottom: parent.bottom
-                                        anchors.left: parent.left
-                                        anchors.leftMargin: 8
-                                        font.pointSize: 14
-                                        font.family: comicMonoBold.name;
-                                        color: "#41FF00"
-                                        antialiasing: false
-                                    }
+                                Text {
+                                    text: "Block Height"
+                                    font.pointSize: 14
+                                    font.family: comicMonoBold.name;
+                                    color: "#41FF00"
+                                    antialiasing: false
                                 }
 
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
-                                    color: "transparent"
-
-                                    Text {
-                                        id: heightText
-                                        text: "-"
-                                        anchors.fill: parent
-                                        anchors.leftMargin: 8
-                                        anchors.topMargin: 2
-                                        verticalAlignment: Text.AlignTop
-                                        fontSizeMode: Text.HorizontalFit
-                                        minimumPointSize: 9
-                                        font.pointSize: 14
-                                        font.family: comicMonoBold.name;
-                                        color: "#41FF00"
-                                        antialiasing: false
-                                    }
+                                Text {
+                                    id: heightText
+                                    text: "-"
+                                    width: parent.width
+                                    fontSizeMode: Text.HorizontalFit
+                                    minimumPointSize: 9
+                                    font.pointSize: 14
+                                    font.family: comicMonoBold.name;
+                                    color: "#41FF00"
+                                    antialiasing: false
                                 }
                             }
 
-                            ColumnLayout {
-                                Layout.minimumWidth: 200
-                                Layout.maximumWidth: 260
-                                Layout.fillHeight: true
+                            Column {
+                                width: Math.min(260, (parent.width - parent.spacing) / 2)
+                                spacing: 2
 
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
-                                    color: "transparent"
-
-                                    Text {
-                                        text: "Sync Progress"
-                                        anchors.bottom: parent.bottom
-                                        anchors.left: parent.left
-                                        anchors.leftMargin: 8
-                                        font.pointSize: 14
-                                        font.family: comicMonoBold.name;
-                                        color: "#41FF00"
-                                        antialiasing: false
-                                    }
+                                Text {
+                                    text: "Sync Progress"
+                                    font.pointSize: 14
+                                    font.family: comicMonoBold.name;
+                                    color: "#41FF00"
+                                    antialiasing: false
                                 }
 
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
-                                    color: "transparent"
-
-                                    Text {
-                                        id: syncPctText
-                                        text: "-"
-                                        anchors.top: parent.top
-                                        anchors.topMargin: 2
-                                        anchors.left: parent.left
-                                        anchors.leftMargin: 8
-                                        font.pointSize: 14
-                                        font.family: comicMonoBold.name;
-                                        color: "#41FF00"
-                                        antialiasing: false
-                                    }
+                                Text {
+                                    id: syncPctText
+                                    text: "-"
+                                    width: parent.width
+                                    fontSizeMode: Text.HorizontalFit
+                                    minimumPointSize: 9
+                                    font.pointSize: 14
+                                    font.family: comicMonoBold.name;
+                                    color: "#41FF00"
+                                    antialiasing: false
                                 }
-                            }
-
-                            Item {
-                                Layout.fillHeight: true
-                                Layout.fillWidth: true
                             }
                         }
                     }
 
                     Image {
                         Layout.preferredWidth: 5
-                        Layout.preferredHeight: parent.height
+                        Layout.preferredHeight: 102   // console bezel is a fixed 102px tall
                         source: "qrc:/mining/topright_right.png"
                         smooth: false
                     }
