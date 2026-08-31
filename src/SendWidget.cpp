@@ -11,6 +11,7 @@
 #include "Icons.h"
 #include "libwalletqt/Wallet.h"
 #include "libwalletqt/WalletManager.h"
+#include "widgets/SceneWidget.h"
 
 #if defined(WITH_SCANNER)
 #include "wizard/offline_tx_signing/OfflineTxSigningWizard.h"
@@ -24,6 +25,14 @@ SendWidget::SendWidget(Wallet *wallet, QWidget *parent)
     , m_wallet(wallet)
 {
     ui->setupUi(this);
+
+    // wowlet: the form only needs the top of the tab — give the rest of it to
+    // the ambient scene. A layout item under the form, never an overlay: the
+    // send form itself stays untouched.
+    auto *scene = new SceneWidget(this);
+    scene->setMinimumHeight(160);
+    scene->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    ui->verticalLayoutOuter->addWidget(scene, 1);
 
     QString amount_rx = R"(^\d{0,8}[\.,]\d{0,12}|(all)$)";
     QRegularExpression rx;

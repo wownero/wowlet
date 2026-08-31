@@ -12,6 +12,7 @@
 #include "utils/config.h"
 #include "utils/Icons.h"
 #include "utils/Utils.h"
+#include "widgets/SceneWidget.h"
 
 ReceiveWidget::ReceiveWidget(Wallet *wallet, QWidget *parent)
         : QWidget(parent)
@@ -19,6 +20,13 @@ ReceiveWidget::ReceiveWidget(Wallet *wallet, QWidget *parent)
         , m_wallet(wallet)
 {
     ui->setupUi(this);
+
+    // wowlet: ambient scene as a short banner under the address table. A layout
+    // item, never an overlay over the table.
+    auto *scene = new SceneWidget(this);
+    scene->setMinimumHeight(110);
+    scene->setMaximumHeight(130);
+    ui->verticalLayout->addWidget(scene);
 
     m_model = m_wallet->subaddressModel();
     m_proxyModel = new SubaddressProxyModel(this, m_wallet->subaddress());
