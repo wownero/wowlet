@@ -14,9 +14,11 @@ feather_autogen/
 feather.cbp
 src/assets_tor.qrc
 src/assets_docs.qrc
+src/assets_wownerod.qrc
 feather.AppDir/*
 src/assets/tor/*
 src/assets/docs/*
+src/assets/wownerod/*
 !src/assets/tor/.gitkeep
 !src/assets/docs/.gitkeep
 contrib/installers/windows/setup.nsi
