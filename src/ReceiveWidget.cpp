@@ -12,6 +12,7 @@
 #include "utils/config.h"
 #include "utils/Icons.h"
 #include "utils/Utils.h"
+#include "widgets/IdleDoge.h"
 
 ReceiveWidget::ReceiveWidget(Wallet *wallet, QWidget *parent)
         : QWidget(parent)
@@ -19,6 +20,8 @@ ReceiveWidget::ReceiveWidget(Wallet *wallet, QWidget *parent)
         , m_wallet(wallet)
 {
     ui->setupUi(this);
+
+    new IdleDoge(this);   // wowlet: whisper-quiet corner critter (freezes when reduced-motion)
 
     m_model = m_wallet->subaddressModel();
     m_proxyModel = new SubaddressProxyModel(this, m_wallet->subaddress());

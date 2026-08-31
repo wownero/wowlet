@@ -19,12 +19,13 @@ WalletUnlockWidget::WalletUnlockWidget(QWidget *parent, Wallet *wallet)
     ui->setupUi(this);
     this->reset();
 
-    // wowlet: ambient scene banner above the unlock form (freezes itself into a
-    // still when "Prefer reduced motion" is set).
+    // wowlet: the lock screen shows the full ambient scene above the unlock form
+    // (this is the idle "screensaver" — the wallet auto-locks here on inactivity).
+    // It freezes into a still when "Prefer reduced motion" is set.
     auto *scene = new SceneWidget(this);
-    scene->setMinimumHeight(120);
-    scene->setMaximumHeight(140);
-    ui->verticalLayout->insertWidget(0, scene);
+    scene->setMinimumHeight(200);
+    scene->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    ui->verticalLayout->insertWidget(0, scene, 1);
 
     ui->buttonBox->button(QDialogButtonBox::Ok)->setAutoDefault(true);
 

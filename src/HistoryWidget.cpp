@@ -14,6 +14,7 @@
 #include "utils/config.h"
 #include "utils/Icons.h"
 #include "WebsocketNotifier.h"
+#include "widgets/SceneWidget.h"
 
 HistoryWidget::HistoryWidget(Wallet *wallet, QWidget *parent)
         : QWidget(parent)
@@ -24,6 +25,13 @@ HistoryWidget::HistoryWidget(Wallet *wallet, QWidget *parent)
         , m_model(wallet->historyModel())
 {
     ui->setupUi(this);
+
+    // wowlet: History is "home" — the full ambient scene as a top banner.
+    auto *scene = new SceneWidget(this);
+    scene->setMinimumHeight(120);
+    scene->setMaximumHeight(150);
+    ui->verticalLayout->insertWidget(0, scene);
+
     m_contextMenu->addMenu(m_copyMenu);
     m_contextMenu->addAction(icons()->icon("info2.svg"), "Show details", this, &HistoryWidget::showTxDetails);
     m_contextMenu->addAction("View on block explorer", this, &HistoryWidget::onViewOnBlockExplorer);

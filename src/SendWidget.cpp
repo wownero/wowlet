@@ -11,6 +11,7 @@
 #include "Icons.h"
 #include "libwalletqt/Wallet.h"
 #include "libwalletqt/WalletManager.h"
+#include "widgets/IdleDoge.h"
 
 #if defined(WITH_SCANNER)
 #include "wizard/offline_tx_signing/OfflineTxSigningWizard.h"
@@ -24,6 +25,8 @@ SendWidget::SendWidget(Wallet *wallet, QWidget *parent)
     , m_wallet(wallet)
 {
     ui->setupUi(this);
+
+    new IdleDoge(this);   // wowlet: whisper-quiet corner critter (freezes when reduced-motion)
 
     QString amount_rx = R"(^\d{0,8}[\.,]\d{0,12}|(all)$)";
     QRegularExpression rx;
