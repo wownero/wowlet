@@ -219,10 +219,44 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          Compress-Archive -Path 'unsigned\*' -DestinationPath 'wowlet-x86_64-windows-unsigned.zip' -Force
-          Compress-Archive -Path 'stage\*'    -DestinationPath 'wowlet-x86_64-windows.zip' -Force
-          Get-ChildItem 'wowlet-x86_64-windows*.zip' |
-            ForEach-Object { "{0}  {1}  {2}" -f $_.Name, $_.Length, (Get-FileHash $_.FullName -Algorithm SHA256).Hash }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+          # Not Compress-Archive: Windows PowerShell writes the OS separator
+          # into entry names, producing "tor\tor.exe". The ZIP format mandates
+          # forward slashes, and extractors that take the backslash literally
+          # leave a file called "tor\tor.exe" in the root instead of a tor
+          # directory -- at which point the bundled Tor is not where wowlet
+          # looks for it, and this wallet gives its daemon an exclusive
+          # --tx-proxy, so no Tor means no transaction relay at all.
+          # v5.1.0 shipped tor/tor.exe from `zip -X`; keep that shape.
+          function New-Archive([string] $Source, [string] $Destination) {
+            if (Test-Path $Destination) { Remove-Item $Destination -Force }
+            $root = (Resolve-Path $Source).Path.TrimEnd('\')
+            $zip = [System.IO.Compression.ZipFile]::Open($Destination, 'Create')
+            try {
+              foreach ($file in Get-ChildItem $root -Recurse -File | Sort-Object FullName) {
+                $entry = $file.FullName.Substring($root.Length + 1).Replace('\', '/')
+                [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                  $zip, $file.FullName, $entry, 'Optimal')
+              }
+            } finally { $zip.Dispose() }
+          }
+
+          New-Archive 'unsigned' 'wowlet-x86_64-windows-unsigned.zip'
+          New-Archive 'stage'    'wowlet-x86_64-windows.zip'
+
+          # Prove the shape rather than trusting it: a backslash in any entry
+          # name fails the build.
+          foreach ($archive in @('wowlet-x86_64-windows.zip', 'wowlet-x86_64-windows-unsigned.zip')) {
+            $zip = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $archive))
+            try {
+              $names = $zip.Entries | ForEach-Object { $_.FullName }
+              if ($names -match '\\') { throw "$archive contains a backslash entry name: $($names -join ', ')" }
+              if ($names -notcontains 'tor/tor.exe') { throw "$archive is missing tor/tor.exe (got: $($names -join ', '))" }
+            } finally { $zip.Dispose() }
+            "{0}  {1}  {2}" -f $archive, (Get-Item $archive).Length,
+              (Get-FileHash $archive -Algorithm SHA256).Hash
+          }
 
       - name: upload Windows zips
         uses: actions/upload-artifact@v3
