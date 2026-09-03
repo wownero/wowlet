@@ -6,7 +6,7 @@ import QtQuick
 //
 // One cycle is three beats, so the scene breathes instead of running flat out:
 //
-//   1. an empty field for 3-5s (sky, grass, and sometimes a doge sitting in it)
+//   1. an empty field for 3-5s (sky, grass, clouds — the scene breathing)
 //   2. the coins pop in, one at a time
 //   3. the doge and the money go by, and the doge collects the coins
 //
@@ -75,7 +75,6 @@ Rectangle {
     property bool tripLap: false     // does the doge eat it this lap?
     property real tripAt:  0.55      // ...and how far along
     readonly property bool tripped: tripLap && runProgress >= tripAt
-    property bool idleLap: false     // doge sitting in the field during beat 0
     property bool birdLap: false
     property bool starLap: false     // shooting star, night only
     property int  bonusIndex: -1     // which coin is worth +5, or -1
@@ -593,10 +592,11 @@ Rectangle {
         source: "qrc:/scene/dog2.gif"
         playing: scene.live && visible
         width: 84; height: 67
-        x: scene.width * (scene.sitMode ? 0.5 : 0.16) - (scene.sitMode ? width / 2 : 0)
+        x: scene.width * 0.5 - width / 2
         y: scene.groundY - height + 14 - scene.sitterHop
-        visible: !scene.reducedMotion
-                 && (scene.sitMode || (scene.runMode && scene.idleLap && scene.beat === 0))
+        // Receive only. He used to fill History's empty beat too, which now
+        // reads as the wrong tab's scene leaking into this one.
+        visible: !scene.reducedMotion && scene.sitMode
         opacity: visible ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: 400 } }
     }
@@ -896,7 +896,6 @@ Rectangle {
         scene.runBeat  = 6800 + Math.floor(Math.random() * 3000);
         scene.tripLap  = Math.random() < 0.17;
         scene.tripAt   = 0.34 + Math.random() * 0.34;
-        scene.idleLap  = Math.random() < 0.45;
         scene.birdLap  = !scene.night && Math.random() < 0.5;
         scene.starLap  = scene.night && Math.random() < 0.4;
         scene.bonusIndex = (Math.random() < 0.3)
