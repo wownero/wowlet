@@ -130,6 +130,16 @@ Rectangle {
     // One roll per lap: how many blow through, when, how fast, how high, how big.
     property var moneyRolls: []
 
+    function rerollMoney(index) {
+        var rolls = scene.moneyRolls.slice();
+        var fresh = scene.rollMoney();
+        rolls[index] = fresh[Math.floor(Math.random() * fresh.length)];
+        // Re-roll whether this bill flies at all, so the sky thins and fills
+        // instead of carrying the same traffic for ever.
+        rolls[index].active = Math.random() < 0.72;
+        scene.moneyRolls = rolls;
+    }
+
     function rollMoney() {
         var n = [0, 1, 1, 2, 2, 3][Math.floor(Math.random() * 6)];
         var out = [];
@@ -141,7 +151,8 @@ Rectangle {
                 "dur":    4200 + Math.floor(Math.random() * 3600),
                 "band":   Math.random(),
                 "size":   0.72 + Math.random() * 0.55,
-                "bob":    6 + Math.random() * 12
+                "bob":    6 + Math.random() * 12,
+                "tumble": Math.random() * 2.5
             });
         }
         return out;
@@ -247,7 +258,7 @@ Rectangle {
 
     // Two birds, rolled per lap, daytime skies only.
     Repeater {
-        model: (scene.night || !scene.birdLap) ? 0 : 2
+        model: (scene.night || !(scene.birdLap || scene.sitMode)) ? 0 : 2
         Item {
             id: bird
             property real p: 0
@@ -267,7 +278,7 @@ Rectangle {
                 rotation: 22 - Math.sin(bird.p * 46 + index) * 16
             }
             NumberAnimation on p {
-                running: scene.live && scene.birdLap
+                running: scene.live && (scene.birdLap || scene.sitMode)
                 loops: Animation.Infinite
                 from: 0; to: 1
                 duration: 21000 + index * 7000
@@ -297,11 +308,25 @@ Rectangle {
                 var span = Math.max(10, scene.height * 0.42 - height * 0.4);
                 return top + band * span + (roll ? Math.sin(p * 7.5) * roll.bob : 0);
             }
-            rotation: roll ? Math.sin(p * 6 + index) * 7 : 0
+            rotation: roll ? Math.sin(p * (5 + roll.tumble) + index) * (6 + roll.tumble * 4) : 0
             opacity: 0.92
 
-            NumberAnimation { id: flyAnim; target: bill; property: "p"; from: 0; to: 1; duration: bill.roll ? bill.roll.dur : 6000 }
-            Timer { id: flyTimer; repeat: false; interval: bill.roll ? bill.roll.delay : 0; onTriggered: if (bill.roll && bill.roll.active) flyAnim.restart() }
+            NumberAnimation {
+                id: flyAnim
+                target: bill; property: "p"; from: 0; to: 1
+                duration: bill.roll ? bill.roll.dur : 6000
+                onFinished: bill.rescheduleSelf()
+            }
+            Timer {
+                id: flyTimer; repeat: false
+                interval: bill.roll ? bill.roll.delay : 0
+                onTriggered: {
+                    if (bill.roll && bill.roll.active)
+                        flyAnim.restart();
+                    else
+                        bill.rescheduleSelf();   // dormant this pass; try again later
+                }
+            }
 
             function armFor(beat) {
                 flyAnim.stop();
@@ -311,6 +336,20 @@ Rectangle {
                 if ((beat === 2 || scene.moneyMode) && scene.live
                         && bill.roll && bill.roll.active)
                     flyTimer.restart();
+            }
+
+            // Money mode has no lap to hide inside, so each bill runs its own
+            // clock: cross, re-roll, wait, cross again. A shared cycle was
+            // cutting bills off mid-screen whenever a roll's delay plus its
+            // duration ran past the cycle length, which looked exactly like
+            // money vanishing halfway across.
+            function rescheduleSelf() {
+                if (!scene.moneyMode || !scene.live)
+                    return;
+                scene.rerollMoney(index);
+                bill.p = 0;
+                flyTimer.interval = 900 + Math.floor(Math.random() * 5200);
+                flyTimer.restart();
             }
             Connections {
                 target: scene
@@ -439,6 +478,115 @@ Rectangle {
     property real sparkT: 1.0
     NumberAnimation { id: sparkAnim; target: scene; property: "sparkT"; from: 0; to: 1; duration: 520 }
 
+    // A coin sails past on the Send screen — money going somewhere.
+    AnimatedImage {
+        id: flyingCoin
+        property real t: 1.0
+        property real band: 0.3
+        source: "qrc:/scene/goldcoin.gif"
+        playing: scene.live && visible
+        visible: !scene.reducedMotion && scene.moneyMode && t < 1.0
+        width: 26; height: 26
+        x: -width + t * (scene.width + width * 2)
+        // A shallow arc rather than a flat line, so it reads as thrown.
+        y: scene.height * band - Math.sin(t * Math.PI) * scene.height * 0.16
+        rotation: t * 540
+        opacity: Math.min(1, Math.sin(t * Math.PI) * 3)
+        NumberAnimation { id: flyingCoinAnim; target: flyingCoin; property: "t"
+                          from: 0; to: 1; duration: 2600 }
+    }
+
+    // ...and one lands in the field on the Receive screen. A coin arriving is
+    // the whole point of that tab, so it is worth more than a doge panting.
+    Item {
+        id: giftCoin
+        property real t: 1.0
+        property real spotX: 0.5
+        readonly property real landAt: 0.55        // t at which it touches down
+        readonly property bool landed: t >= landAt && t < 1.0
+        visible: !scene.reducedMotion && scene.sitMode && t < 1.0
+        width: scene.coinSize; height: width
+        x: scene.width * spotX - width / 2
+        y: {
+            if (t >= landAt)
+                return scene.coinRestY - Math.abs(Math.sin((t - landAt) * 9)) * 10
+                       * (1 - (t - landAt) / (1 - landAt));      // settle bounce
+            var fall = t / landAt;
+            return -height + fall * fall * (scene.coinRestY + height);
+        }
+        AnimatedImage {
+            anchors.fill: parent
+            source: "qrc:/scene/goldcoin.gif"
+            playing: scene.live && giftCoin.visible
+            opacity: giftCoin.t > 0.9 ? (1 - giftCoin.t) * 10 : 1
+        }
+        Repeater {
+            model: 6
+            Rectangle {
+                readonly property real ang: (index / 6) * Math.PI * 2
+                readonly property real burst: Math.max(0, Math.min(1,
+                    (giftCoin.t - giftCoin.landAt) * 4))
+                width: 3; height: 3; radius: 1.5; color: "#ffe9a3"
+                visible: giftCoin.landed && burst < 1
+                opacity: 1 - burst
+                x: giftCoin.width / 2 - 1.5 + Math.cos(ang) * burst * 22
+                y: giftCoin.height / 2 - 1.5 + Math.sin(ang) * burst * 22
+            }
+        }
+        NumberAnimation { id: giftCoinAnim; target: giftCoin; property: "t"
+                          from: 0; to: 1; duration: 3400 }
+    }
+
+    // The quiet screens get their own clock: every few seconds something small
+    // happens, so the tab is never just a dog breathing.
+    property real sitterHop: 0.0
+    SequentialAnimation {
+        id: sitterHopAnim
+        NumberAnimation { target: scene; property: "sitterHop"; to: 9; duration: 180; easing.type: Easing.OutQuad }
+        NumberAnimation { target: scene; property: "sitterHop"; to: 0; duration: 220; easing.type: Easing.InQuad }
+        NumberAnimation { target: scene; property: "sitterHop"; to: 4; duration: 140; easing.type: Easing.OutQuad }
+        NumberAnimation { target: scene; property: "sitterHop"; to: 0; duration: 120; easing.type: Easing.InQuad }
+    }
+
+    Timer {
+        id: ambientTimer
+        repeat: true
+        running: scene.live && !scene.runMode
+        interval: 5000
+        onTriggered: {
+            scene.ambientEvent();
+            interval = 4200 + Math.floor(Math.random() * 7000);
+        }
+    }
+
+    function ambientEvent() {
+        var roll = Math.random();
+        if (scene.moneyMode) {
+            if (roll < 0.62) {
+                flyingCoin.band = 0.16 + Math.random() * 0.30;
+                flyingCoinAnim.duration = 2100 + Math.floor(Math.random() * 2200);
+                flyingCoinAnim.restart();
+            } else if (scene.night) {
+                shootingStar.p = 1.0;
+                starAnim.restart();
+            }
+            return;
+        }
+        // sit mode
+        if (roll < 0.5) {
+            // Beside him, on whichever side, and clear of the sun at 0.74.
+            giftCoin.spotX = (Math.random() < 0.5) ? 0.30 + Math.random() * 0.12
+                                                   : 0.58 + Math.random() * 0.10;
+            giftCoinAnim.restart();
+            sitterHopAnim.restart();                        // he notices
+        } else if (roll < 0.72) {
+            sitterHopAnim.restart();
+        } else if (scene.night) {
+            shootingStar.p = 1.0;
+            starAnim.restart();
+        }
+    }
+
     // The doge, sitting this one out. Beat 0 only, and only on some laps.
     AnimatedImage {
         id: sitter
@@ -446,7 +594,7 @@ Rectangle {
         playing: scene.live && visible
         width: 84; height: 67
         x: scene.width * (scene.sitMode ? 0.5 : 0.16) - (scene.sitMode ? width / 2 : 0)
-        y: scene.groundY - height + 14
+        y: scene.groundY - height + 14 - scene.sitterHop
         visible: !scene.reducedMotion
                  && (scene.sitMode || (scene.runMode && scene.idleLap && scene.beat === 0))
         opacity: visible ? 1.0 : 0.0
@@ -728,6 +876,9 @@ Rectangle {
         scene.picked = 0;
         scene.hopY = 0.0;
         scene.sparkT = 1.0;
+        scene.sitterHop = 0.0;
+        flyingCoin.t = 1.0;
+        giftCoin.t = 1.0;
 
         if (!scene.live)
             return;
@@ -739,9 +890,7 @@ Rectangle {
         if (scene.moneyMode) {
             scene.moneyRolls = scene.rollMoney();
             scene.beat = 2;               // arms the bills through armFor()
-            beatTimer.interval = 9000 + Math.floor(Math.random() * 5000);
-            beatTimer.start();
-            return;
+            return;                       // each bill reschedules itself
         }
 
         scene.runBeat  = 6800 + Math.floor(Math.random() * 3000);
