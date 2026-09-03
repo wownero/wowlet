@@ -5,6 +5,7 @@
 #define WOWLET_SCENEWIDGET_H
 
 #include <QObject>
+#include <QString>
 #include <QQuickWidget>
 
 // Context object exposed to scene.qml as `sceneCtx`. Carries the reduced-motion
@@ -14,18 +15,23 @@ class SceneBackend : public QObject {
 Q_OBJECT
     Q_PROPERTY(bool reducedMotion READ reducedMotion NOTIFY reducedMotionChanged)
     Q_PROPERTY(int variant READ variant NOTIFY variantChanged)
+    Q_PROPERTY(QString mode READ mode NOTIFY modeChanged)
 public:
     explicit SceneBackend(QObject *parent = nullptr) : QObject(parent) {}
     bool reducedMotion() const { return m_reducedMotion; }
     void setReducedMotion(bool r) { if (m_reducedMotion != r) { m_reducedMotion = r; emit reducedMotionChanged(); } }
     int variant() const { return m_variant; }
     void setVariant(int v) { if (m_variant != v) { m_variant = v; emit variantChanged(); } }
+    QString mode() const { return m_mode; }
+    void setMode(const QString &m) { if (m_mode != m) { m_mode = m; emit modeChanged(); } }
 signals:
     void reducedMotionChanged();
     void variantChanged();
+    void modeChanged();
 private:
     bool m_reducedMotion = false;
     int  m_variant = 0;
+    QString m_mode = QStringLiteral("run");
 };
 
 // wowlet: reusable ambient-scene surface. Hosts scene.qml and reads the
@@ -38,9 +44,32 @@ public:
     // same field. Must match the `skies` table in scene.qml.
     enum Variant { Dusk = 0, Dawn = 1, Night = 2 };
 
-    explicit SceneWidget(QWidget *parent = nullptr, Variant variant = Dusk);
+    // How much scene a surface wants. History has room for the whole run;
+    // Receive gets a doge sitting in the field; Send gets money blowing past and
+    // nothing else, so the form it sits under is not competing with a dog.
+    enum Mode { Run, Sit, Money };
+
+    explicit SceneWidget(QWidget *parent = nullptr, Variant variant = Dusk,
+                         Mode mode = Run);
     void refreshReducedMotion();
+
+protected:
+    // A scene on a hidden tab is parked rather than left running: an unshown
+    // QQuickWidget is 0px wide, and a lap run against a 0px field collects every
+    // coin at once and leaves its litter (+1s, barks) to surface on the real lap
+    // when the tab is finally shown. Parking also keeps a background tab from
+    // burning CPU on animation nobody is looking at.
+    void showEvent(QShowEvent *event) override;
+    void hideEvent(QHideEvent *event) override;
+    // Belt and braces: a scene that is on screen and has just been given a real
+    // size is running, whether or not a show event was the thing that got it
+    // there. `restart` only sets a flag, so re-arming an already-running scene
+    // costs nothing and does not interrupt its lap.
+    void resizeEvent(QResizeEvent *event) override;
+
 private:
+    void callScene(const char *method);
+
     SceneBackend *m_backend;
 };
 
