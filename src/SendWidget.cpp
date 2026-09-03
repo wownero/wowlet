@@ -29,7 +29,7 @@ SendWidget::SendWidget(Wallet *wallet, QWidget *parent)
     // wowlet: the form only needs the top of the tab — give the rest of it to
     // the ambient scene. A layout item under the form, never an overlay: the
     // send form itself stays untouched.
-    auto *scene = new SceneWidget(this, SceneWidget::Night);
+    auto *scene = new SceneWidget(this, SceneWidget::Night, SceneWidget::Money);
     scene->setMinimumHeight(160);
     scene->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     ui->verticalLayoutOuter->addWidget(scene, 1);

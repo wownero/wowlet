@@ -39,6 +39,14 @@ Rectangle {
     property bool reducedMotion: (typeof sceneCtx !== 'undefined' && sceneCtx) ? sceneCtx.reducedMotion : false
     // 0 dusk · 1 dawn · 2 night — so the tabs are not all the same field.
     property int  variant:       (typeof sceneCtx !== 'undefined' && sceneCtx) ? sceneCtx.variant : 0
+    // What this surface is doing. History gets the whole run; Receive gets a
+    // doge sitting in the field; Send gets money blowing past and nothing else.
+    // One scene, three amounts of it, so a form does not have to compete with a
+    // dog for attention.
+    property string mode: (typeof sceneCtx !== 'undefined' && sceneCtx) ? sceneCtx.mode : "run"
+    readonly property bool runMode:   mode === "run"
+    readonly property bool sitMode:   mode === "sit"
+    readonly property bool moneyMode: mode === "money"
 
     // The host sets this false while its tab is hidden (see SceneWidget).
     property bool onScreen: true
@@ -91,15 +99,23 @@ Rectangle {
     // A tripped doge stops where he fell instead of sliding on to the far edge.
     readonly property real dogProgress: tripped ? tripAt : runProgress
     readonly property real dogX: runStart + dogProgress * (runEnd - runStart)
+                                + scene.crashSlide
     // The doge collects a coin once his snout reaches the coin's centre.
     readonly property real snoutX: dogX + dogWidth * 0.78
     property real hopY: 0.0          // victory hop
 
     // Crash rig. Driven by crashAnim, reset by resetCrash().
+    //
+    // The wipeout is a face-plant and a skid, not a stunt: he pitches nose-down
+    // by a small angle, drops onto his snout, and slides forward along the
+    // ground while the dust goes up. An earlier version rotated him 66 degrees
+    // about a pivot inside the sprite and sheared him at the same time, which
+    // launched him into the air at a diagonal and stretched him on the way.
     property real crashRot:    0.0
     property real crashSquashX: 1.0
     property real crashSquashY: 1.0
-    property real crashBend:   0.0
+    property real crashDrop:   0.0   // px down, so the face reaches the ground
+    property real crashSlide:  0.0   // px forward along the ground
     property real dustT:       1.0   // 0..1 sweep; 1 is spent
 
     // --- the coins ----------------------------------------------------------
@@ -120,7 +136,8 @@ Rectangle {
         for (var i = 0; i < 3; ++i) {
             out.push({
                 "active": i < n,
-                "delay":  Math.floor(Math.random() * Math.max(1, scene.runBeat - 2500)),
+                "delay":  Math.floor(Math.random() * (scene.moneyMode ? 7000
+                          : Math.max(1, scene.runBeat - 2500))),
                 "dur":    4200 + Math.floor(Math.random() * 3600),
                 "band":   Math.random(),
                 "size":   0.72 + Math.random() * 0.55,
@@ -268,8 +285,9 @@ Rectangle {
             property real p: 0
             source: "qrc:/scene/flyingmoney.gif"
             playing: scene.live && bill.visible
-            visible: scene.reducedMotion ? index === 0
-                                         : (roll !== null && roll.active && p > 0 && p < 1)
+            visible: scene.sitMode ? false
+                     : scene.reducedMotion ? index === 0
+                     : (roll !== null && roll.active && p > 0 && p < 1)
             width: 60 * (roll ? roll.size : 1); height: 55 * (roll ? roll.size : 1)
             x: scene.reducedMotion ? scene.width * 0.30
                                    : -width - 20 + p * (scene.width + width * 2 + 40)
@@ -289,7 +307,9 @@ Rectangle {
                 flyAnim.stop();
                 bill.p = 0;
                 flyTimer.stop();
-                if (beat === 2 && scene.live && bill.roll && bill.roll.active)
+                // In money mode every lap is the money beat.
+                if ((beat === 2 || scene.moneyMode) && scene.live
+                        && bill.roll && bill.roll.active)
                     flyTimer.restart();
             }
             Connections {
@@ -309,7 +329,7 @@ Rectangle {
     }
 
     Repeater {
-        model: scene.coinCount
+        model: scene.runMode ? scene.coinCount : 0
 
         Item {
             id: coin
@@ -425,38 +445,39 @@ Rectangle {
         source: "qrc:/scene/dog2.gif"
         playing: scene.live && visible
         width: 84; height: 67
-        x: scene.width * 0.16
+        x: scene.width * (scene.sitMode ? 0.5 : 0.16) - (scene.sitMode ? width / 2 : 0)
         y: scene.groundY - height + 14
-        visible: !scene.reducedMotion && scene.idleLap && scene.beat === 0
+        visible: !scene.reducedMotion
+                 && (scene.sitMode || (scene.runMode && scene.idleLap && scene.beat === 0))
         opacity: visible ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: 400 } }
     }
 
     Item {
         id: rig
+        visible: scene.runMode
         width: scene.dogWidth
         height: scene.dogHeight
         x: scene.reducedMotion ? 8 : scene.dogX
-        y: scene.groundY - scene.dogHeight + 21 - scene.hopY
+        y: scene.groundY - scene.dogHeight + 21 - scene.hopY + scene.crashDrop
 
         AnimatedImage {
             id: doge
             anchors.fill: parent
             source: "qrc:/scene/dog.gif"
             playing: scene.live && !scene.tripped
+            // Freezing a run cycle leaves him in whatever mid-stride pose the
+            // gif happened to be on, legs extended, which reads as airborne no
+            // matter how he is rotated. Frame 4 has the legs tucked under the
+            // body — the closest thing this sprite sheet has to a heap.
+            onPlayingChanged: if (!playing && scene.tripped) currentFrame = 4
             // Face-plant: he tips over his own front paws — the pivot is the paw
             // on the grass line, not the middle of the sprite, or the snout
             // swings straight down through the ground. Then the face squashes
             // against the dirt and the body bends over it.
-            readonly property real pivotX: rig.width * 0.80
-            readonly property real pivotY: rig.height - 21
+            readonly property real pivotX: rig.width * 0.86   // the snout
+            readonly property real pivotY: rig.height - 14    // on the grass
             transform: [
-                Matrix4x4 {
-                    matrix: Qt.matrix4x4(1, -scene.crashBend, 0, scene.crashBend * doge.pivotY,
-                                         0, 1, 0, 0,
-                                         0, 0, 1, 0,
-                                         0, 0, 0, 1)
-                },
                 Scale {
                     origin.x: doge.pivotX; origin.y: doge.pivotY
                     xScale: scene.crashSquashX; yScale: scene.crashSquashY
@@ -473,14 +494,14 @@ Rectangle {
             model: 12
             Rectangle {
                 readonly property real ang: -Math.PI * (0.08 + 0.84 * (((index * 31) % 12) / 11))
-                readonly property real spd: 46 + ((index * 37) % 42)
+                readonly property real spd: 30 + ((index * 37) % 26)
                 width: 4 + (index % 5); height: width; radius: width / 2
                 color: index % 3 === 0 ? "#fff6e4" : (index % 3 === 1 ? "#e8d6b4" : "#c9a878")
                 visible: scene.dustT < 1.0
                 opacity: (1.0 - scene.dustT) * 0.95
-                x: rig.width * 0.92 - width / 2 + Math.cos(ang) * scene.dustT * spd
-                y: rig.height - 24 + Math.sin(ang) * scene.dustT * spd * 0.62
-                     + scene.dustT * scene.dustT * 34
+                x: rig.width * 0.90 - width / 2 + Math.cos(ang) * scene.dustT * spd
+                y: rig.height - 12 + Math.sin(ang) * scene.dustT * spd * 0.45
+                     + scene.dustT * scene.dustT * 26
             }
         }
     }
@@ -497,7 +518,7 @@ Rectangle {
         opacity: 0.0
         scale: 0.6
         transformOrigin: Item.BottomLeft
-        visible: opacity > 0.01
+        visible: scene.runMode && opacity > 0.01
 
         Rectangle {
             anchors.fill: parent
@@ -566,6 +587,24 @@ Rectangle {
         bark.rotation = 0;
     }
 
+    // Cleared the field and got across: say so, rather than letting the lap
+    // just end and the next one start with a doge sitting down.
+    Text {
+        id: winner
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: scene.height * 0.16
+        text: scene.picked > 0 ? "WIN  +" + scene.picked : "WIN"
+        color: "#8ff08a"
+        style: Text.Outline
+        styleColor: "#10240f"
+        font.bold: true
+        font.pixelSize: Math.max(20, Math.min(scene.height * 0.20, 34))
+        opacity: (scene.runMode && scene.winShown) ? 1.0 : 0.0
+        scale: scene.winShown ? 1.0 : 1.35
+        Behavior on opacity { NumberAnimation { duration: 280 } }
+        Behavior on scale   { NumberAnimation { duration: 420; easing.type: Easing.OutBack } }
+    }
+
     Text {
         id: gameOver
         anchors.horizontalCenter: parent.horizontalCenter
@@ -576,7 +615,7 @@ Rectangle {
         styleColor: "#1a0b1f"
         font.bold: true
         font.pixelSize: Math.max(20, Math.min(scene.height * 0.20, 34))
-        opacity: scene.gameOverShown ? 1.0 : 0.0
+        opacity: (scene.runMode && scene.gameOverShown) ? 1.0 : 0.0
         scale: scene.gameOverShown ? 1.0 : 1.35
         Behavior on opacity { NumberAnimation { duration: 320 } }
         Behavior on scale   { NumberAnimation { duration: 420; easing.type: Easing.OutBack } }
@@ -585,26 +624,21 @@ Rectangle {
     // --- the crash ----------------------------------------------------------
     SequentialAnimation {
         id: crashAnim
-        // Impact: over the nose, squashed into the ground, bent through the body.
+        // Impact: he pitches onto his nose and the dust comes up. Small angle
+        // on purpose — a shiba tripping is a face on the ground, not a cartwheel.
         ParallelAnimation {
-            NumberAnimation { target: scene; property: "crashRot";    to: 66;   duration: 160; easing.type: Easing.InQuad }
-            NumberAnimation { target: scene; property: "crashSquashX"; to: 1.26; duration: 170 }
-            NumberAnimation { target: scene; property: "crashSquashY"; to: 0.74; duration: 170 }
-            NumberAnimation { target: scene; property: "crashBend";   to: 0.30; duration: 170 }
-            NumberAnimation { target: scene; property: "dustT"; from: 0; to: 1;  duration: 780; easing.type: Easing.OutQuad }
+            NumberAnimation { target: scene; property: "crashRot";     to: 26;   duration: 150; easing.type: Easing.InQuad }
+            NumberAnimation { target: scene; property: "crashDrop";    to: 21;   duration: 150; easing.type: Easing.InQuad }
+            NumberAnimation { target: scene; property: "crashSquashX"; to: 1.07; duration: 150 }
+            NumberAnimation { target: scene; property: "crashSquashY"; to: 0.93; duration: 150 }
+            NumberAnimation { target: scene; property: "dustT"; from: 0; to: 1;  duration: 700; easing.type: Easing.OutQuad }
         }
-        // Settle: he does not bounce all the way back out of it.
+        // The skid: his face carries on along the ground and stops.
         ParallelAnimation {
-            NumberAnimation { target: scene; property: "crashRot";    to: 52;   duration: 420; easing.type: Easing.OutBack }
-            NumberAnimation { target: scene; property: "crashSquashX"; to: 1.10; duration: 420; easing.type: Easing.OutBack }
-            NumberAnimation { target: scene; property: "crashSquashY"; to: 0.92; duration: 420; easing.type: Easing.OutBack }
-            NumberAnimation { target: scene; property: "crashBend";   to: 0.12; duration: 420; easing.type: Easing.OutQuad }
-        }
-        // ...and lies there breathing, so the wreck is not a frozen frame.
-        SequentialAnimation {
-            loops: Animation.Infinite
-            NumberAnimation { target: scene; property: "crashSquashY"; to: 0.97; duration: 900; easing.type: Easing.InOutQuad }
-            NumberAnimation { target: scene; property: "crashSquashY"; to: 0.90; duration: 900; easing.type: Easing.InOutQuad }
+            NumberAnimation { target: scene; property: "crashSlide";   to: 26;   duration: 620; easing.type: Easing.OutQuad }
+            NumberAnimation { target: scene; property: "crashRot";     to: 21;   duration: 380; easing.type: Easing.OutQuad }
+            NumberAnimation { target: scene; property: "crashSquashX"; to: 1.03; duration: 380; easing.type: Easing.OutQuad }
+            NumberAnimation { target: scene; property: "crashSquashY"; to: 0.97; duration: 380; easing.type: Easing.OutQuad }
         }
     }
 
@@ -613,10 +647,13 @@ Rectangle {
         scene.crashRot = 0.0;
         scene.crashSquashX = 1.0;
         scene.crashSquashY = 1.0;
-        scene.crashBend = 0.0;
+        scene.crashDrop = 0.0;
+        scene.crashSlide = 0.0;
         scene.dustT = 1.0;
     }
 
+    // He got across with the field cleared.
+    property bool winShown: false
     // GAME OVER lands a beat after the wipeout so the crash reads on its own.
     property bool gameOverShown: false
     Timer { id: gameOverTimer; interval: 460; repeat: false; onTriggered: scene.gameOverShown = true }
@@ -673,11 +710,14 @@ Rectangle {
         target: scene; property: "runProgress"
         from: 0.0; to: 1.0
         duration: scene.runBeat
+        onFinished: if (scene.live && !scene.tripped) scene.winShown = true
     }
 
     Timer { id: beatTimer; repeat: false; onTriggered: scene.advance() }
 
     // Beat 0 is the empty field, 1 is the coins coming out, 2 is the run.
+    // Only "run" mode walks all three: money mode loops the money beat, and a
+    // sitting doge needs no cycle at all.
     function startLap() {
         scene.stopEverything();
 
@@ -691,6 +731,18 @@ Rectangle {
 
         if (!scene.live)
             return;
+
+        if (scene.sitMode) {
+            scene.beat = 0;
+            return;                       // nothing to schedule; he just sits
+        }
+        if (scene.moneyMode) {
+            scene.moneyRolls = scene.rollMoney();
+            scene.beat = 2;               // arms the bills through armFor()
+            beatTimer.interval = 9000 + Math.floor(Math.random() * 5000);
+            beatTimer.start();
+            return;
+        }
 
         scene.runBeat  = 6800 + Math.floor(Math.random() * 3000);
         scene.tripLap  = Math.random() < 0.17;
@@ -725,6 +777,7 @@ Rectangle {
         scene.tripLap = false;
         gameOverTimer.stop();
         scene.gameOverShown = false;
+        scene.winShown = false;
         scene.hushBark();
         scene.resetCrash();
     }
@@ -732,6 +785,10 @@ Rectangle {
     function advance() {
         if (!scene.live)
             return;
+        if (!scene.runMode) {
+            scene.startLap();
+            return;
+        }
         if (scene.beat === 0) {
             scene.beat = 1;
             revealAnim.start();

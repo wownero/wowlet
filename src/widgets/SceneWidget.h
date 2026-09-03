@@ -5,6 +5,7 @@
 #define WOWLET_SCENEWIDGET_H
 
 #include <QObject>
+#include <QString>
 #include <QQuickWidget>
 
 // Context object exposed to scene.qml as `sceneCtx`. Carries the reduced-motion
@@ -14,18 +15,23 @@ class SceneBackend : public QObject {
 Q_OBJECT
     Q_PROPERTY(bool reducedMotion READ reducedMotion NOTIFY reducedMotionChanged)
     Q_PROPERTY(int variant READ variant NOTIFY variantChanged)
+    Q_PROPERTY(QString mode READ mode NOTIFY modeChanged)
 public:
     explicit SceneBackend(QObject *parent = nullptr) : QObject(parent) {}
     bool reducedMotion() const { return m_reducedMotion; }
     void setReducedMotion(bool r) { if (m_reducedMotion != r) { m_reducedMotion = r; emit reducedMotionChanged(); } }
     int variant() const { return m_variant; }
     void setVariant(int v) { if (m_variant != v) { m_variant = v; emit variantChanged(); } }
+    QString mode() const { return m_mode; }
+    void setMode(const QString &m) { if (m_mode != m) { m_mode = m; emit modeChanged(); } }
 signals:
     void reducedMotionChanged();
     void variantChanged();
+    void modeChanged();
 private:
     bool m_reducedMotion = false;
     int  m_variant = 0;
+    QString m_mode = QStringLiteral("run");
 };
 
 // wowlet: reusable ambient-scene surface. Hosts scene.qml and reads the
@@ -38,7 +44,13 @@ public:
     // same field. Must match the `skies` table in scene.qml.
     enum Variant { Dusk = 0, Dawn = 1, Night = 2 };
 
-    explicit SceneWidget(QWidget *parent = nullptr, Variant variant = Dusk);
+    // How much scene a surface wants. History has room for the whole run;
+    // Receive gets a doge sitting in the field; Send gets money blowing past and
+    // nothing else, so the form it sits under is not competing with a dog.
+    enum Mode { Run, Sit, Money };
+
+    explicit SceneWidget(QWidget *parent = nullptr, Variant variant = Dusk,
+                         Mode mode = Run);
     void refreshReducedMotion();
 
 protected:

@@ -23,7 +23,7 @@ ReceiveWidget::ReceiveWidget(Wallet *wallet, QWidget *parent)
 
     // wowlet: ambient scene as a short banner under the address table. A layout
     // item, never an overlay over the table.
-    auto *scene = new SceneWidget(this, SceneWidget::Dawn);
+    auto *scene = new SceneWidget(this, SceneWidget::Dawn, SceneWidget::Sit);
     scene->setMinimumHeight(110);
     scene->setMaximumHeight(130);
     ui->verticalLayout->addWidget(scene);
