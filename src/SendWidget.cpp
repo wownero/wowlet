@@ -29,10 +29,17 @@ SendWidget::SendWidget(Wallet *wallet, QWidget *parent)
     // wowlet: the form only needs the top of the tab — give the rest of it to
     // the ambient scene. A layout item under the form, never an overlay: the
     // send form itself stays untouched.
+    //
+    // Centred in the space below the form rather than stacked straight under
+    // it: butted up against the Clear/Send row the scene reads as part of the
+    // form, and a band of night sky touching a button looks like a mistake.
     auto *scene = new SceneWidget(this, SceneWidget::Night, SceneWidget::Money);
     scene->setMinimumHeight(160);
-    scene->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    ui->verticalLayoutOuter->addWidget(scene, 1);
+    scene->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    ui->verticalLayoutOuter->addSpacing(14);   // never touches the Send row
+    ui->verticalLayoutOuter->addStretch(1);
+    ui->verticalLayoutOuter->addWidget(scene);
+    ui->verticalLayoutOuter->addStretch(1);
 
     QString amount_rx = R"(^\d{0,8}[\.,]\d{0,12}|(all)$)";
     QRegularExpression rx;

@@ -477,22 +477,41 @@ Rectangle {
     property real sparkT: 1.0
     NumberAnimation { id: sparkAnim; target: scene; property: "sparkT"; from: 0; to: 1; duration: 520 }
 
-    // A coin sails past on the Send screen — money going somewhere.
-    AnimatedImage {
-        id: flyingCoin
-        property real t: 1.0
-        property real band: 0.3
-        source: "qrc:/scene/goldcoin.gif"
-        playing: scene.live && visible
-        visible: !scene.reducedMotion && scene.moneyMode && t < 1.0
-        width: 26; height: 26
-        x: -width + t * (scene.width + width * 2)
-        // A shallow arc rather than a flat line, so it reads as thrown.
-        y: scene.height * band - Math.sin(t * Math.PI) * scene.height * 0.16
-        rotation: t * 540
-        opacity: Math.min(1, Math.sin(t * Math.PI) * 3)
-        NumberAnimation { id: flyingCoinAnim; target: flyingCoin; property: "t"
-                          from: 0; to: 1; duration: 2600 }
+    // Coins sail past on the Send screen — money going somewhere. Three of
+    // them, because one at a time reads as a metronome; a handful crossing
+    // together with a beat between them reads as a payment going out.
+    Repeater {
+        id: flyingCoins
+        model: 3
+        AnimatedImage {
+            id: coinFly
+            property real t: 1.0
+            property real band: 0.3
+            property real spin: 540
+            source: "qrc:/scene/goldcoin.gif"
+            playing: scene.live && visible
+            visible: !scene.reducedMotion && scene.moneyMode && t < 1.0
+            width: 22 + index * 5; height: width
+            x: -width + t * (scene.width + width * 2)
+            // A shallow arc rather than a flat line, so it reads as thrown.
+            y: scene.height * band - Math.sin(t * Math.PI) * scene.height * 0.16
+            rotation: t * spin
+            opacity: Math.min(1, Math.sin(t * Math.PI) * 3)
+
+            NumberAnimation { id: coinFlyAnim; target: coinFly; property: "t"
+                              from: 0; to: 1; duration: 2600 }
+            Timer { id: coinFlyTimer; repeat: false; onTriggered: coinFlyAnim.restart() }
+
+            function launch(delayMs) {
+                coinFlyAnim.stop();
+                coinFly.t = 1.0;                       // hidden until it starts
+                coinFly.band = 0.14 + Math.random() * 0.32;
+                coinFly.spin = (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540);
+                coinFlyAnim.duration = 2000 + Math.floor(Math.random() * 2400);
+                coinFlyTimer.interval = Math.max(1, delayMs);
+                coinFlyTimer.restart();
+            }
+        }
     }
 
     // ...and one lands in the field on the Receive screen. A coin arriving is
@@ -561,10 +580,18 @@ Rectangle {
     function ambientEvent() {
         var roll = Math.random();
         if (scene.moneyMode) {
-            if (roll < 0.62) {
-                flyingCoin.band = 0.16 + Math.random() * 0.30;
-                flyingCoinAnim.duration = 2100 + Math.floor(Math.random() * 2200);
-                flyingCoinAnim.restart();
+            if (roll < 0.68) {
+                // One coin most of the time, two now and then, occasionally
+                // three — staggered by a beat so they arrive as a handful
+                // rather than a rank.
+                var n = 1;
+                if (Math.random() < 0.38) n = 2;
+                if (Math.random() < 0.14) n = 3;
+                for (var i = 0; i < n; ++i) {
+                    var item = flyingCoins.itemAt(i);
+                    if (item)
+                        item.launch(i * (120 + Math.floor(Math.random() * 380)));
+                }
             } else if (scene.night) {
                 shootingStar.p = 1.0;
                 starAnim.restart();
@@ -877,7 +904,10 @@ Rectangle {
         scene.hopY = 0.0;
         scene.sparkT = 1.0;
         scene.sitterHop = 0.0;
-        flyingCoin.t = 1.0;
+        for (var ci = 0; ci < 3; ++ci) {
+            var c = flyingCoins.itemAt(ci);
+            if (c) c.t = 1.0;
+        }
         giftCoin.t = 1.0;
 
         if (!scene.live)
