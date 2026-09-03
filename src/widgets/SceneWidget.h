@@ -40,7 +40,24 @@ public:
 
     explicit SceneWidget(QWidget *parent = nullptr, Variant variant = Dusk);
     void refreshReducedMotion();
+
+protected:
+    // A scene on a hidden tab is parked rather than left running: an unshown
+    // QQuickWidget is 0px wide, and a lap run against a 0px field collects every
+    // coin at once and leaves its litter (+1s, barks) to surface on the real lap
+    // when the tab is finally shown. Parking also keeps a background tab from
+    // burning CPU on animation nobody is looking at.
+    void showEvent(QShowEvent *event) override;
+    void hideEvent(QHideEvent *event) override;
+    // Belt and braces: a scene that is on screen and has just been given a real
+    // size is running, whether or not a show event was the thing that got it
+    // there. `restart` only sets a flag, so re-arming an already-running scene
+    // costs nothing and does not interrupt its lap.
+    void resizeEvent(QResizeEvent *event) override;
+
 private:
+    void callScene(const char *method);
+
     SceneBackend *m_backend;
 };
 
