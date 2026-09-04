@@ -252,7 +252,7 @@ void MainWindow::initWidgets() {
     });
 
     // [Mining] — wowlet: the pixel-art mining tab (mining.qml + embedded-node solo miner)
-    m_miningWidget = new MiningWidget(m_wallet, this);
+    m_miningWidget = new MiningWidget(m_wallet, m_nodes, this);
     ui->tabWidget->addTab(m_miningWidget, "Mining");
 
     // [Notes]

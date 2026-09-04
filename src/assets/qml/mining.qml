@@ -512,6 +512,10 @@ Rectangle {
                     Image {
                         id: imgAxe
                         visible: mining.daemonMiningState === 0
+                        // Greyed out while the wallet is on someone else's node:
+                        // solo mining is an RPC to the daemon we are connected
+                        // to, and that daemon has to be ours.
+                        opacity: mining.canMine ? 1.0 : 0.35
                         source: "qrc:/mining/axe.png"
                         width: 73
                         height: 75
@@ -551,7 +555,11 @@ Rectangle {
                         cursorShape: Qt.PointingHandCursor
 
                         onClicked: {
-                            if(mining.daemonMiningState === 0) {
+                            if (mining.daemonMiningState === 0) {
+                                if (!mining.canMine) {
+                                    remoteNodeNotice.flash();
+                                    return;
+                                }
                                 root.startMining();
                                 root.calcAvailableHeightConsoleLines();
                             }
@@ -559,13 +567,55 @@ Rectangle {
                                 root.stopMining();
                         }
                         onEntered: {
-                            imgAxe.height = 64
-                            imgAxe.width = 64
+                            if (mining.canMine) {
+                                imgAxe.height = 64
+                                imgAxe.width = 64
+                            } else {
+                                remoteNodeNotice.show();
+                            }
                         }
                         onExited: {
                             imgAxe.height = 75
                             imgAxe.width = 73
+                            remoteNodeNotice.hideSoon();
                         }
+                    }
+
+                    // Why the axe is greyed out. Shown on hover, and flashed if
+                    // the axe is clicked anyway.
+                    Rectangle {
+                        id: remoteNodeNotice
+                        z: parent.z + 5
+                        visible: opacity > 0.01
+                        opacity: 0.0
+                        width: 250
+                        height: noticeText.implicitHeight + 16
+                        radius: 6
+                        color: "#231a10"
+                        border.color: "#e0b062"
+                        border.width: 1
+                        anchors.right: parent.left
+                        anchors.rightMargin: 8
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Text {
+                            id: noticeText
+                            anchors.centerIn: parent
+                            width: parent.width - 16
+                            wrapMode: Text.WordWrap
+                            horizontalAlignment: Text.AlignHCenter
+                            color: "#f2dcb4"
+                            font.pointSize: 9
+                            text: "Mining needs your own node.\nYou are connected to a remote one — " +
+                                  "start the built-in node or point the wallet at a local daemon " +
+                                  "under Settings to mine."
+                        }
+
+                        Behavior on opacity { NumberAnimation { duration: 160 } }
+                        Timer { id: noticeHide; interval: 2600; onTriggered: remoteNodeNotice.opacity = 0.0 }
+                        function show()     { noticeHide.stop(); opacity = 1.0 }
+                        function hideSoon() { noticeHide.restart() }
+                        function flash()    { show(); noticeHide.restart() }
                     }
                 }
             }

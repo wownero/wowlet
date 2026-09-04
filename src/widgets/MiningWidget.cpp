@@ -3,6 +3,8 @@
 
 #include "MiningWidget.h"
 
+#include "utils/nodes.h"
+
 #include <algorithm>
 
 #include <QVBoxLayout>
@@ -20,9 +22,10 @@ static QString formatUptime(qint64 secs) {
         .arg(secs % 60, 2, 10, QChar('0'));
 }
 
-MiningWidget::MiningWidget(Wallet *wallet, QWidget *parent)
+MiningWidget::MiningWidget(Wallet *wallet, Nodes *nodes, QWidget *parent)
     : QWidget(parent)
     , m_wallet(wallet)
+    , m_nodes(nodes)
     , m_quickWidget(new QQuickWidget(this))
     , m_backend(new MiningBackend(this))
     , m_timer(new QTimer(this))
@@ -46,6 +49,10 @@ MiningWidget::MiningWidget(Wallet *wallet, QWidget *parent)
 }
 
 void MiningWidget::onStartMining() {
+    // The QML disables the control, but the signal is not a promise: refuse
+    // here too rather than send start_mining to a stranger's daemon.
+    if (!m_backend->canMine())
+        return;
     int threads = std::max(1, QThread::idealThreadCount() / 2);
     if (m_wallet->startMining(threads))
         m_backend->setState(3);
@@ -57,6 +64,8 @@ void MiningWidget::onStopMining() {
 }
 
 void MiningWidget::poll() {
+    m_backend->setCanMine(m_nodes && m_nodes->connection().isLocal());
+
     bool mining = m_wallet->isMining();
     m_backend->setState(mining ? 3 : 0);
 
