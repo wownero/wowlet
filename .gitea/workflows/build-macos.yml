@@ -103,8 +103,39 @@ jobs:
           # for the dormant `installed/` layout)
           mkdir -p dist/Wowlet.app/Contents/Resources
           cp ../src/assets/images/appicons/appicon.icns dist/Wowlet.app/Contents/Resources/
-          # bundle Qt frameworks/plugins so the app runs off-machine
-          /opt/homebrew/opt/qt/bin/macdeployqt dist/Wowlet.app
+          # bundle Qt frameworks/plugins so the app runs off-machine.
+          # -qmldir is not optional: our QML lives in .qrc resources, which
+          # macdeployqt cannot scan, so without it the bundle ships no QML
+          # modules at all and every page importing anything beyond QtQuick
+          # fails to load. That is how 5.1.2 shipped a grey mining tab on mac
+          # while Linux was fine: Contents/Resources held no qml directory, and
+          # the app logged 'module "QtQuick.Layouts" is not installed'.
+          /opt/homebrew/opt/qt/bin/macdeployqt dist/Wowlet.app -qmldir=../src/assets/qml
+
+          # qmlimportscanner reads only the `import` lines in our QML and does
+          # not follow a module's own qmldir depends chain, so transitive
+          # modules (QtQuick -> QtQml.WorkerScript/Models) are silently skipped.
+          # The AppImage build hit this twice and blanket-copies the trees; do
+          # the same here, before the dylib passes below so their deps resolve.
+          # Ask Qt where its QML modules live rather than assuming a brew
+          # layout; the AppImage build asks qmake the same question.
+          QTPREFIX="$(brew --prefix qt)"
+          QMLSRC="$("$QTPREFIX/bin/qmake6" -query QT_INSTALL_QML 2>/dev/null || echo "$QTPREFIX/share/qt/qml")"
+          [ -d "$QMLSRC" ] || { echo "ERROR: Qt QML modules not found at $QMLSRC" >&2; exit 1; }
+          mkdir -p dist/Wowlet.app/Contents/Resources/qml
+          for m in QtQuick QtQml; do
+            cp -Rn "$QMLSRC/$m" dist/Wowlet.app/Contents/Resources/qml/ 2>/dev/null || true
+          done
+
+          # Guard: the module the mining tab needs has to be in the bundle. A
+          # missing QML module is invisible until someone opens the tab, so it
+          # fails the build instead of shipping a page that paints grey.
+          for m in QtQuick QtQuick/Layouts; do
+            [ -d "dist/Wowlet.app/Contents/Resources/qml/$m" ] || {
+              echo "ERROR: $m missing from the bundle; QML pages will not load" >&2
+              exit 1
+            }
+          done
 
           # macdeployqt bundles Qt frameworks but not the plain-dylib brew deps
           # of Qt's image plugins (libwebp/libsharpyuv/libbrotli...), which are
