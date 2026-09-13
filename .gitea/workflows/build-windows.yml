@@ -270,3 +270,47 @@ jobs:
             wowlet-x86_64-windows.zip
             wowlet-x86_64-windows-unsigned.zip
           if-no-files-found: error
+
+      - name: publish the Windows zips to the tag's release
+        # Same reason as the Linux and macOS jobs: artifacts upload fine, but
+        # this Gitea's REST listing reports zero for every run, so the signed exe
+        # cannot be fetched back through the API. Release assets can be.
+        #
+        # This runs after the Authenticode, timestamp and signer checks above, so
+        # an unsigned or untimestamped binary never reaches a release. curl.exe,
+        # not Invoke-WebRequest: `shell: powershell` is Windows PowerShell 5.1,
+        # whose Invoke-WebRequest has no -Form for multipart uploads.
+        #
+        # Fail-safe: a build that produced a correctly signed binary must not go
+        # red because publishing failed, so every bad path reports and exits 0.
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: powershell
+        env:
+          RELEASE_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Continue'
+          if (-not $env:RELEASE_TOKEN) {
+            Write-Host "no token available to this runner, skipping the release upload"
+            exit 0
+          }
+          $tag = $env:GITHUB_REF -replace '^refs/tags/', ''
+          $server = if ($env:GITHUB_SERVER_URL) { $env:GITHUB_SERVER_URL } else { 'https://git.such.software' }
+          $api = "$server/api/v1/repos/$env:GITHUB_REPOSITORY"
+          $auth = "Authorization: token $env:RELEASE_TOKEN"
+          $rid = ''
+          try { $rid = ((curl.exe -sS -H $auth "$api/releases/tags/$tag") | ConvertFrom-Json).id } catch { $rid = '' }
+          if (-not $rid) {
+            try {
+              $body = "{""tag_name"":""$tag"",""name"":""wowlet $tag""}"
+              $rid = ((curl.exe -sS -H $auth -H "Content-Type: application/json" -X POST -d $body "$api/releases") | ConvertFrom-Json).id
+            } catch { $rid = '' }
+          }
+          if (-not $rid) {
+            Write-Host "could not resolve or create a release for $tag, skipping the upload"
+            exit 0
+          }
+          foreach ($f in @('wowlet-x86_64-windows.zip', 'wowlet-x86_64-windows-unsigned.zip')) {
+            if (-not (Test-Path $f)) { Write-Host "missing $f, nothing to publish for it"; continue }
+            $code = curl.exe -sS -o NUL -w '%{http_code}' -H $auth -F "attachment=@$f" "$api/releases/$rid/assets?name=$f"
+            Write-Host "release asset upload for $f returned HTTP $code"
+          }
