@@ -91,7 +91,7 @@ jobs:
           rm -rf AppDir
           mkdir -p AppDir/usr/bin AppDir/usr/share/applications \
                    AppDir/usr/share/icons/hicolor/256x256/apps
-          cp build/bin/feather AppDir/usr/bin/wowlet
+          cp build/bin/wowlet AppDir/usr/bin/wowlet
           chmod +x AppDir/usr/bin/wowlet
           cp src/assets/wowlet.desktop AppDir/usr/share/applications/wowlet.desktop
           cp src/assets/images/appicons/256x256.png \
