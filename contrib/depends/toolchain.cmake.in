@@ -43,6 +43,15 @@ SET(absl_ROOT @prefix@)
 SET(NATIVE_BIN_PATH @prefix@/native/bin CACHE FILEPATH "path to native binaries" FORCE)
 SET(LRELEASE_PATH @prefix@/native/bin CACHE FILEPATH "path to lrelease" FORCE)
 
+# A cross Qt that carries qtdeclarative makes find_package(Qt6) demand a HOST Qt,
+# because QML needs host-side tools (qmlcachegen, qmlimportscanner,
+# qmltyperegistrar). depends already builds one: native_qt installs to
+# native/qt-host and qt.mk hands that path to the cross Qt's own configure. Our
+# build never heard about it, so Qt6Config refused with "please set the
+# QT_HOST_PATH cache variable" and the Windows cross build has failed since
+# qtdeclarative landed. Same path, stated once more for the consuming project.
+SET(QT_HOST_PATH @prefix@/native/qt-host CACHE PATH "host Qt for cross QML tooling")
+
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
 SET(LIBUNWIND_INCLUDE_DIR @prefix@/include)
 SET(LIBUNWIND_LIBRARIES @prefix@/lib/libunwind.a)
