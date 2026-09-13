@@ -42,30 +42,36 @@ jobs:
 
       - name: fetch wownerod to embed
         run: |
-          rm -rf /tmp/wownerod-embed && mkdir -p /tmp/wownerod-embed
-          curl -fL -o /tmp/wownero.tar.bz2 \
+          # ubuntu-latest and windows-latest both resolve to the same host in
+          # host mode, so a fixed /tmp path lets a concurrently dispatched job's
+          # `rm -rf` delete this job's binary between fetch and configure. Scope
+          # every extract to the run.
+          EMBED="/tmp/wowlet-${GITHUB_RUN_ID:-local}"
+          rm -rf "$EMBED/wownerod-embed" && mkdir -p "$EMBED/wownerod-embed"
+          curl -fL -o "$EMBED/wownero.tar.bz2" \
             https://github.com/wownero/wownero-codeberg-mirror/releases/download/v0.11.4.0/wownero-x86_64-linux-gnu-v0.11.4.0.tar.bz2
-          rm -rf /tmp/wow-x && mkdir -p /tmp/wow-x
-          tar xjf /tmp/wownero.tar.bz2 -C /tmp/wow-x
-          find /tmp/wow-x -name wownerod -type f -exec cp {} /tmp/wownerod-embed/ \;
-          chmod +x /tmp/wownerod-embed/wownerod
-          ls -la /tmp/wownerod-embed
+          rm -rf "$EMBED/wow-x" && mkdir -p "$EMBED/wow-x"
+          tar xjf "$EMBED/wownero.tar.bz2" -C "$EMBED/wow-x"
+          find "$EMBED/wow-x" -name wownerod -type f -exec cp {} "$EMBED/wownerod-embed/" \;
+          chmod +x "$EMBED/wownerod-embed/wownerod"
+          ls -la "$EMBED/wownerod-embed"
 
       - name: fetch tor to embed
         run: |
-          rm -rf /tmp/tor-embed && mkdir -p /tmp/tor-embed
-          curl -fL -o /tmp/teb.tgz \
+          EMBED="/tmp/wowlet-${GITHUB_RUN_ID:-local}"
+          rm -rf "$EMBED/tor-embed" && mkdir -p "$EMBED/tor-embed"
+          curl -fL -o "$EMBED/teb.tgz" \
             https://archive.torproject.org/tor-package-archive/torbrowser/15.0/tor-expert-bundle-linux-x86_64-15.0.tar.gz
-          rm -rf /tmp/teb && mkdir -p /tmp/teb && tar xzf /tmp/teb.tgz -C /tmp/teb
-          cp /tmp/teb/tor/tor /tmp/teb/tor/libssl.so.3 /tmp/teb/tor/libevent-2.1.so.7 \
-             /tmp/teb/tor/libcrypto.so.3 /tmp/tor-embed/
+          rm -rf "$EMBED/teb" && mkdir -p "$EMBED/teb" && tar xzf "$EMBED/teb.tgz" -C "$EMBED/teb"
+          cp "$EMBED/teb/tor/tor" "$EMBED/teb/tor/libssl.so.3" "$EMBED/teb/tor/libevent-2.1.so.7" \
+             "$EMBED/teb/tor/libcrypto.so.3" "$EMBED/tor-embed/"
           # The expert bundle's tor carries no rpath; point it and its libs at
           # $ORIGIN so the embedded copy resolves them from the extract dir on
           # any distro.
           for f in tor libssl.so.3 libevent-2.1.so.7 libcrypto.so.3; do
-            patchelf --set-rpath '$ORIGIN' /tmp/tor-embed/$f
+            patchelf --set-rpath '$ORIGIN' "$EMBED/tor-embed/$f"
           done
-          chmod +x /tmp/tor-embed/tor
+          chmod +x "$EMBED/tor-embed/tor"
 
       - name: build
         run: |
@@ -73,15 +79,16 @@ jobs:
           # binary, or TorManager::unpackBins() sees embedded > unpacked and
           # rewrites Tor on every launch. The bundle's release number (15.0) is
           # not its tor version, so derive it.
-          TORVER=$(/tmp/tor-embed/tor --version | grep -oE '[0-9]+(\.[0-9]+){3}' | head -1)
+          EMBED="/tmp/wowlet-${GITHUB_RUN_ID:-local}"
+          TORVER=$("$EMBED/tor-embed/tor" --version | grep -oE '[0-9]+(\.[0-9]+){3}' | head -1)
           echo "embedded tor version: $TORVER"
           # ARCH=x86-64, never native: the build host's CPU is newer than many
           # users' and native bakes in unsupported instructions -> SIGILL.
           cmake -S . -B build \
             -DWITH_SCANNER=OFF \
             -DARCH=x86-64 \
-            -DWOWNEROD_DIR=/tmp/wownerod-embed \
-            -DTOR_DIR=/tmp/tor-embed \
+            -DWOWNEROD_DIR="$EMBED/wownerod-embed" \
+            -DTOR_DIR="$EMBED/tor-embed" \
             -DTOR_VERSION="$TORVER"
           cmake --build build -j6
           ls -la build/bin/

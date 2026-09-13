@@ -98,13 +98,17 @@ jobs:
 
       - name: fetch wownerod.exe to embed
         run: |
-          rm -rf /tmp/wownerod-embed && mkdir -p /tmp/wownerod-embed
-          curl -fL -o /tmp/wownero-win.zip \
+          # This job and the Linux one land on the same host in host mode, and a
+          # fixed /tmp path let each wipe the other's binary mid-build. Scope the
+          # extract to the run.
+          EMBED="/tmp/wowlet-${GITHUB_RUN_ID:-local}"
+          rm -rf "$EMBED/wownerod-embed" && mkdir -p "$EMBED/wownerod-embed"
+          curl -fL -o "$EMBED/wownero-win.zip" \
             https://github.com/wownero/wownero-codeberg-mirror/releases/download/v0.11.4.0/wownero-x86_64-w64-mingw32-v0.11.4.0.zip
           # -j flattens the versioned subdir so wownerod.exe is a DIRECT child
           # (WownerodQrcGenerator globs ${WOWNEROD_DIR}/* non-recursively).
-          unzip -o -j /tmp/wownero-win.zip 'wownero-x86_64-w64-mingw32-v0.11.4.0/wownerod.exe' -d /tmp/wownerod-embed
-          ls -la /tmp/wownerod-embed
+          unzip -o -j "$EMBED/wownero-win.zip" 'wownero-x86_64-w64-mingw32-v0.11.4.0/wownerod.exe' -d "$EMBED/wownerod-embed"
+          ls -la "$EMBED/wownerod-embed"
 
       - name: build wowlet.exe
         run: |
@@ -118,7 +122,7 @@ jobs:
             -DCHECK_UPDATES=OFF \
             -DTOR_INSTALLED=On \
             -DFEATHER_TARGET_TRIPLET="$HOST" \
-            -DWOWNEROD_DIR=/tmp/wownerod-embed \
+            -DWOWNEROD_DIR="/tmp/wowlet-${GITHUB_RUN_ID:-local}/wownerod-embed" \
             ..
           cmake --build . -j6
           ls -la bin/
