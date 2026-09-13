@@ -148,7 +148,10 @@ add_executable(feather ${EXECUTABLE_FLAG} main.cpp
         ${ASSETS_TOR}
 )
 
+# The CMake target keeps its upstream name so the target_* calls below stay put;
+# only what we ship is renamed.
 set_target_properties(feather PROPERTIES
+        OUTPUT_NAME wowlet
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         LINK_FLAGS_RELEASE -s
 )
@@ -370,14 +373,14 @@ else()
     )
 
     if (UNIX AND NOT APPLE)
-        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/feather.desktop DESTINATION ${CMAKE_INSTALL_PREFIX}/share/applications)
-        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/images/appicons/32x32.png DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/32x32/apps RENAME "feather.png")
-        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/images/appicons/48x48.png DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/48x48/apps RENAME "feather.png")
-        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/images/appicons/64x64.png DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/64x64/apps RENAME "feather.png")
-        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/images/appicons/96x96.png DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/96x96/apps RENAME "feather.png")
-        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/images/appicons/128x128.png DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/128x128/apps RENAME "feather.png")
-        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/images/appicons/256x256.png DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/256x256/apps RENAME "feather.png")
-        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/images/appicons/512x512.png DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/512x512/apps RENAME "feather.png")
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/wowlet.desktop DESTINATION ${CMAKE_INSTALL_PREFIX}/share/applications)
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/images/appicons/32x32.png DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/32x32/apps RENAME "wowlet.png")
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/images/appicons/48x48.png DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/48x48/apps RENAME "wowlet.png")
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/images/appicons/64x64.png DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/64x64/apps RENAME "wowlet.png")
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/images/appicons/96x96.png DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/96x96/apps RENAME "wowlet.png")
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/images/appicons/128x128.png DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/128x128/apps RENAME "wowlet.png")
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/images/appicons/256x256.png DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/256x256/apps RENAME "wowlet.png")
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/images/appicons/512x512.png DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/512x512/apps RENAME "wowlet.png")
     endif()
 endif()
 
@@ -385,13 +388,14 @@ if(APPLE)
     configure_file(${CMAKE_SOURCE_DIR}/contrib/macdeploy/Info.plist.in ${CMAKE_SOURCE_DIR}/contrib/macdeploy/Info.plist @ONLY)
 
     set_target_properties(feather PROPERTIES
+            OUTPUT_NAME wowlet
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
             MACOSX_BUNDLE TRUE
             MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/contrib/macdeploy/Info.plist"
             LINK_FLAGS_RELEASE -s
     )
 
-    file(COPY "${CMAKE_SOURCE_DIR}/src/assets/images/appicons/appicon.icns" DESTINATION "${CMAKE_SOURCE_DIR}/installed/feather.app/Contents/Resources/" )
+    file(COPY "${CMAKE_SOURCE_DIR}/src/assets/images/appicons/appicon.icns" DESTINATION "${CMAKE_SOURCE_DIR}/installed/wowlet.app/Contents/Resources/" )
 endif()
 
 qt_finalize_executable(feather)

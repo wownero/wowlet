@@ -129,7 +129,7 @@ jobs:
         # archive contains the signed binary.
         run: |
           mkdir -p stage/tor
-          cp build/bin/feather.exe stage/wowlet.exe
+          cp build/bin/wowlet.exe stage/wowlet.exe
           cp "contrib/depends/$HOST/Tor/tor.exe" stage/tor/tor.exe
           (cp LICENSE stage/LICENSE.txt 2>/dev/null || cp COPYING stage/LICENSE.txt 2>/dev/null) || true
           ls -la stage stage/tor
