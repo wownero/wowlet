@@ -247,3 +247,47 @@ jobs:
           name: wowlet-macos
           path: build/wowlet-macos-*.zip
           retention-days: 14
+          # Without this an empty upload passes silently, which is how a signed
+          # build can appear to publish while shipping nothing.
+          if-no-files-found: error
+
+      - name: publish the signed zip to the tag's release
+        # Same reason as the Linux job: run artifacts upload but this Gitea's
+        # REST listing returns zero for every run, so the notarized zip cannot
+        # be fetched back through the API. Release assets can be. Fail-safe:
+        # with no usable token this says why and exits 0.
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          FILE=$(ls build/wowlet-macos-*.zip 2>/dev/null | head -1)
+          if [ -z "$FILE" ]; then
+            echo "no macOS zip to publish; the packaging step should have failed first" >&2
+            exit 0
+          fi
+          TAG="${GITHUB_REF#refs/tags/}"
+          API="${GITHUB_SERVER_URL:-https://git.such.software}/api/v1/repos/$GITHUB_REPOSITORY"
+          if [ -z "${RELEASE_TOKEN:-}" ]; then
+            echo "no token available to this runner, skipping the release upload" >&2
+            exit 0
+          fi
+          H="Authorization: token $RELEASE_TOKEN"
+          # Single-line python on purpose: a continuation line at column 0 would
+          # end this block scalar and break the workflow's YAML. `|| true` keeps
+          # a malformed response from aborting the step under `set -e`.
+          rid=$(curl -sS -H "$H" "$API/releases/tags/$TAG" | python3 -c "import json,sys;print(json.load(sys.stdin).get('id',''))" 2>/dev/null || true)
+          if [ -z "$rid" ]; then
+            rid=$(curl -sS -H "$H" -H "Content-Type: application/json" -X POST \
+              -d "{\"tag_name\":\"$TAG\",\"name\":\"wowlet $TAG\"}" "$API/releases" | python3 -c "import json,sys;print(json.load(sys.stdin).get('id',''))" 2>/dev/null || true)
+          fi
+          if [ -z "$rid" ]; then
+            echo "could not resolve or create a release for $TAG, skipping the upload" >&2
+            exit 0
+          fi
+          code=$(curl -sS -H "$H" -o /dev/null -w '%{http_code}' -X POST \
+            -F "attachment=@$FILE" "$API/releases/$rid/assets?name=$(basename "$FILE")")
+          echo "release asset upload returned HTTP $code"
+          if [ "$code" != "201" ]; then
+            echo "the release upload did not return 201; the run artifact still holds the build" >&2
+          fi

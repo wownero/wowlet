@@ -154,3 +154,41 @@ jobs:
           name: wowlet-x86_64-linux-AppImage
           path: wowlet-x86_64.AppImage
           if-no-files-found: error
+
+      - name: publish the AppImage to the tag's release
+        # The artifact above uploads fine but this Gitea's REST listing reports
+        # zero artifacts for every run, so a tag build's output cannot be fetched
+        # back through the API. Release assets can, so publish there as well.
+        # Fail-safe by design: with no usable token this says why and exits 0,
+        # it never turns a green build red.
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          FILE=wowlet-x86_64.AppImage
+          TAG="${GITHUB_REF#refs/tags/}"
+          API="${GITHUB_SERVER_URL:-https://git.such.software}/api/v1/repos/$GITHUB_REPOSITORY"
+          if [ -z "${RELEASE_TOKEN:-}" ]; then
+            echo "no token available to this runner, skipping the release upload" >&2
+            exit 0
+          fi
+          H="Authorization: token $RELEASE_TOKEN"
+          # Single-line python on purpose: a continuation line at column 0 would
+          # end this block scalar and break the workflow's YAML. `|| true` keeps
+          # a malformed response from aborting the step under `set -e`.
+          rid=$(curl -sS -H "$H" "$API/releases/tags/$TAG" | python3 -c "import json,sys;print(json.load(sys.stdin).get('id',''))" 2>/dev/null || true)
+          if [ -z "$rid" ]; then
+            rid=$(curl -sS -H "$H" -H "Content-Type: application/json" -X POST \
+              -d "{\"tag_name\":\"$TAG\",\"name\":\"wowlet $TAG\"}" "$API/releases" | python3 -c "import json,sys;print(json.load(sys.stdin).get('id',''))" 2>/dev/null || true)
+          fi
+          if [ -z "$rid" ]; then
+            echo "could not resolve or create a release for $TAG, skipping the upload" >&2
+            exit 0
+          fi
+          code=$(curl -sS -H "$H" -o /dev/null -w '%{http_code}' -X POST \
+            -F "attachment=@$FILE" "$API/releases/$rid/assets?name=$(basename "$FILE")")
+          echo "release asset upload returned HTTP $code"
+          if [ "$code" != "201" ]; then
+            echo "the release upload did not return 201; the run artifact still holds the build" >&2
+          fi
