@@ -1,0 +1,12 @@
+name: source checks
+
+on: [push, pull_request]
+
+jobs:
+  docs:
+    name: Wowlet documentation gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check generated documentation and support contacts
+        run: make check
