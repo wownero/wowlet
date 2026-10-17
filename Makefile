@@ -15,5 +15,6 @@ default: build
 
 check:
 	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s contrib/docs/tests -v
+	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s contrib/release/tests -v
 
 .PHONY: default build attest verify clean check

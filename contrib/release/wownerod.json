@@ -1,0 +1,12 @@
+{
+  "version": "v0.11.5.0",
+  "source_commit": "b22382c55fa2a97cd70aca450026b8e2bb8711a6",
+  "checksum_evidence": "https://github.com/wownero/wownero/actions/runs/37402323531",
+  "checksum_signature": "The release tag build replaced the archives after SHA256SUMS.txt.asc was signed. These hashes match the successful tag build and current release metadata; that signature does not cover these archives.",
+  "archives": {
+    "wownero-x86_64-w64-mingw32-v0.11.5.0.zip": "46dffbd313de1df4667516acf23737f986eb2e131c06a8dde1d11dcff2eb06e2",
+    "wownero-aarch64-apple-darwin11-v0.11.5.0.tar.bz2": "bad8cc7f1c78d026e63dbe3ffc0f2175d50b986bbde3fc18826a04ff693866d4",
+    "wownero-x86_64-apple-darwin11-v0.11.5.0.tar.bz2": "ae562c90a10856fcdd183dc9530dff73e46ed6eece9fb8dcfaa77f1e07174787",
+    "wownero-x86_64-linux-gnu-v0.11.5.0.tar.bz2": "2d0cc62c24255d45c51936616559651378011501c55a8caadb9a125bb875849b"
+  }
+}
