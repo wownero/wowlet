@@ -1,46 +1,41 @@
-# Release process
+# Wowlet release process
 
-- Before a minor release:
-  - Update `src/assets/restore_heights_monero_{mainnet,stagenet}.txt`
-    - To obtain values, run `contrib/generate-restore-heights/heights.py`
-  - Update default node lists in `src/assets/nodes.json`
-  - Bump `openssl`, `qt`, `tor_*` packages in `contrib/depends/packages`
-  - Update or patch any statically linked dependencies that have known vulnerabilities
-    - Run `feather-utils/depends/vulns.py` to check
-  - Rebase on top of latest Monero version
-- Update `src/assets/ack.txt`
-- Update documentation (`feather-wallet/feather-docs`) and `external/feather-docs` submodule
-- Update the version number in `CMakeLists.txt`
-  - A hardfork-ready release must bump major version
-- Create an annotated tag (`git tag x.x.x -a`)
-  - Tag must match version in `CMakeLists.txt`
-  - Only commits that update the version number in `CMakeLists.txt` may be tagged
-- Push the master branch and tags
-  - `git push --tags origin master`
-- Run `guix` builds in a clean repo:
-  - ```bash
-    git clone https://github.com/feather-wallet/feather.git
-    cd feather
-    git checkout <TAG>
-    git submodule update --init --recursive
-    ./contrib/guix/guix-build
-    ```
-  - Alternatively, run `feather-utils/guix/run-build.sh`
-- Attest the builds (`contrib/guix/guix-attest`) and PR to `feather/feather-sigs`.
-  - Wait until at least one other person has independently verified reproducibility
-  - If builds are not reproducible: fix any reproducibility defects and bump patch version. Do not sign or release non-reproducible builds.
-- Sign release artifacts and hashlists.
-  - Transfer files in `guix-build-x.x.x/output` to release signing machine
-  - Run `feather-utils/release/make-release.sh`
-- Update the site (`feather-wallet/feather-site`)
-  - Run the `feather-utils/site/bump-version.py` script to create a template commit.
-  - Edit the changelog in `content/changelog`
-    - If a release includes security fixes add "(includes security fixes)" to the title.
-  - Update the version number, file sizes and paths in `data/release.json`
-  - Upload releases, signatures and signed hashlists.
-    - Follow the directory structure defined in `MainWindow::onShowUpdateCheck`.
-  - Make `depends` source files [available](https://featherwallet.org/files/sources/):
-    - `make -C contrib/depends download`
-- Announce release on irc/Matrix
-- Update websocket servers to notify clients of new release
-  - Wait up to 7 days to allow for bug reports before major rollout
+GitHub `wownero/wowlet` owns source and public releases. Private `Builds/wowlet`
+is the build ingress on our hardware. Fleet owns dispatch and publication plans.
+A source merge, a build, a code signature and a published release are separate outcomes.
+
+1. Prepare and review a GitHub pull request with the version, wallet-library pin,
+   support documentation and release inputs. Publish a new library commit to its
+   canonical repository before pinning it. Keep source and dependency revisions exact.
+2. `make check` runs the cheap source checks. Run the private Linux, Windows and
+   macOS workflows through reviewed Fleet admission with `expected_sha` equal to
+   the protected Builds commit. Preserve canonical source and Builds commit identities
+   separately. Do not run release builds on GitHub.
+3. The build helpers verify embedded Wownero archives against `contrib/release/wownerod.json`.
+   That file records the reviewed checksum provenance. Do not describe an unsigned
+   checksum list as a PGP verification.
+4. Collect artifacts by their run and artifact identities. Require a Linux AppImage,
+   macOS archive, signed Windows archive and unsigned Windows archive. Check archive
+   paths, bundled runtimes and packaging requirements. Never select an artifact by size.
+5. Require Developer ID signing, accepted notarization and stapling for macOS.
+   Require valid, timestamped Such Software LLC Authenticode signing for Windows.
+   The EV token stays on its signing host; CI never receives its password or key.
+6. Record any manual wallet checks actually performed. Manual testing and independent
+   reproducibility are separate evidence; successful builds do not prove either.
+   The unsigned Windows archive is provided for reproduction, without claiming an
+   independent reproduction occurred.
+7. Create `hashes.txt` over the four final archives. Sign it on the owner's signing
+   machine with the existing release key `9F9930300530DF724761B7055A881347310EB79F`.
+   Verify the detached signature and all hashes before publication. Never transfer
+   the private key or put a passphrase in a command, environment or log.
+8. Create an annotated `vX.Y.Z` tag from the exact reviewed canonical source, matching
+   `CMakeLists.txt`. Use Fleet's reviewed publication plan to upload the four archives,
+   `hashes.txt` and `hashes.txt.asc` to GitHub Releases. Refuse replacement of existing
+   tags or assets; recover partial publication from retained intent.
+9. Download the public assets again and verify their hashes and PGP signature. Record
+   the tag, source commit, Builds commit, run identities, signing evidence and public
+   URL in the private journal. Release notes should say when security fixes are included.
+
+Additional architectures and Guix builds remain separate lanes. Do not claim a
+platform is released merely because its workflow exists. Announcements are an
+owner action, separate from publishing the release files.

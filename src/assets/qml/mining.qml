@@ -606,7 +606,7 @@ Rectangle {
                             horizontalAlignment: Text.AlignHCenter
                             color: "#f2dcb4"
                             font.pointSize: 9
-                            text: "Mining needs your own node.\nYou are connected to a remote one — " +
+                            text: "Mining needs your own node.\nYou are connected to a remote one. " +
                                   "start the built-in node or point the wallet at a local daemon " +
                                   "under Settings to mine."
                         }

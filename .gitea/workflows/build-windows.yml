@@ -107,19 +107,11 @@ jobs:
           path: contrib/depends/built
           key: depends-built-mingw32-${{ hashFiles('contrib/depends/packages/*', 'contrib/depends/hosts/*', 'contrib/depends/toolchain.cmake.in') }}
 
-      - name: fetch wownerod.exe to embed
+      - name: fetch verified wownerod to embed
         run: |
-          # This job and the Linux one land on the same host in host mode, and a
-          # fixed /tmp path let each wipe the other's binary mid-build. Scope the
-          # extract to the run.
-          EMBED="/tmp/wowlet-${GITHUB_RUN_ID:-local}"
-          rm -rf "$EMBED/wownerod-embed" && mkdir -p "$EMBED/wownerod-embed"
-          curl -fL -o "$EMBED/wownero-win.zip" \
-            https://github.com/wownero/wownero-codeberg-mirror/releases/download/v0.11.4.0/wownero-x86_64-w64-mingw32-v0.11.4.0.zip
-          # -j flattens the versioned subdir so wownerod.exe is a DIRECT child
-          # (WownerodQrcGenerator globs ${WOWNEROD_DIR}/* non-recursively).
-          unzip -o -j "$EMBED/wownero-win.zip" 'wownero-x86_64-w64-mingw32-v0.11.4.0/wownerod.exe' -d "$EMBED/wownerod-embed"
-          ls -la "$EMBED/wownerod-embed"
+          python3 -B contrib/release/fetch_wownerod.py \
+            --target x86_64-w64-mingw32 \
+            --destination "/tmp/wowlet-${GITHUB_RUN_ID}/wownerod-embed"
 
       - name: build wowlet.exe
         run: |
