@@ -13,4 +13,7 @@ clean:
 DEFAULT_GOAL := default
 default: build
 
-.PHONY: default build attest verify clean
+check:
+	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s contrib/docs/tests -v
+
+.PHONY: default build attest verify clean check

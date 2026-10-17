@@ -2,6 +2,7 @@ import os
 import glob
 
 DOCS_DIR = "external/feather-docs/content/_guides"
+OVERRIDES_DIR = "contrib/docs/overrides"
 OUT_DIR = "src/assets/docs"
 
 CATEGORY_MAP = {
@@ -21,9 +22,12 @@ outfiles = glob.glob(f"{OUT_DIR}/*.md")
 for file in outfiles:
     os.remove(file)
 
-files = glob.glob(f"{DOCS_DIR}/*.md")
+# Wowlet owns its support contacts. Local sources take precedence so regenerating
+# the bundled docs cannot restore Feather's contact details.
+files = {os.path.basename(path): path for path in glob.glob(f"{DOCS_DIR}/*.md")}
+files.update({os.path.basename(path): path for path in glob.glob(f"{OVERRIDES_DIR}/*.md")})
 
-for file in files:
+for file in sorted(files.values()):
     with open(file) as f:
         doc = f.read()
 
