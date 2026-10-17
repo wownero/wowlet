@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import secrets
 import subprocess
+import sys
 import tempfile
 
 
@@ -77,13 +78,18 @@ def private_file(path, content):
         stream.write(content)
 
 
-def main():
+def signing_inputs():
     credentials = {name: os.environ.get(name, "") for name in FIELDS}
     missing = [name for name, value in credentials.items() if not value]
     if missing:
         raise ValueError("Signing input is missing: " + ", ".join(missing))
     if "Such Software" not in credentials["APPLE_SIGNING_IDENTITY"]:
         raise ValueError("Developer ID identity does not name the expected publisher")
+    return credentials
+
+
+def main():
+    credentials = signing_inputs()
     app = Path("build/dist/Wowlet.app").resolve()
     if not app.is_dir():
         raise ValueError("Packaged Wowlet.app is missing")
@@ -143,7 +149,13 @@ def main():
 
 if __name__ == "__main__":
     try:
-        main()
+        if sys.argv[1:] == ["--check-inputs"]:
+            signing_inputs()
+            print("Required signing inputs are present")
+        elif sys.argv[1:]:
+            raise ValueError("Use no arguments to sign or --check-inputs for the cheap input guard")
+        else:
+            main()
     except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired) as error:
         # These exceptions contain logical fields, native result classes or
         # public file paths. Captured child output is never included.

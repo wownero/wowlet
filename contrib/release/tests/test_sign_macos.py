@@ -29,6 +29,12 @@ class MacSigningTests(unittest.TestCase):
         self.assertTrue(options["capture_output"])
         self.assertNotIn("APPLE_CERTIFICATE_PASSWORD", options["env"])
 
+    def test_missing_inputs_refuse_without_native_operations(self):
+        with patch.dict(signing.os.environ, {}, clear=True), patch.object(signing.subprocess, "run") as execute:
+            with self.assertRaises(ValueError):
+                signing.signing_inputs()
+            execute.assert_not_called()
+
     def test_control_characters_and_unrelated_keychain_operations_refuse(self):
         with patch.object(signing.subprocess, "run") as execute:
             for value in ("line\nbreak", "nul\x00byte", "carriage\rreturn"):
