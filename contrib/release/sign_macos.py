@@ -5,10 +5,12 @@ https://github.com/apple-oss-distributions/SecurityTool/blob/main/security.c
 Output stays captured because native diagnostics may repeat supplied input.
 """
 import base64
+from contextlib import contextmanager
 import json
 import os
 from pathlib import Path
 import secrets
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -34,7 +36,7 @@ def child_environment():
 def security(operation, *values):
     if operation not in {
         "create-keychain", "set-keychain-settings", "unlock-keychain", "import",
-        "set-key-partition-list", "delete-keychain",
+        "set-key-partition-list", "delete-keychain", "list-keychains",
     }:
         raise ValueError("Keychain operation is outside candidate signing")
     command = " ".join(argument(value) for value in (operation, *values)) + "\n"
@@ -56,6 +58,8 @@ def security(operation, *values):
                      "native keychain operation returned an error")
         raise RuntimeError(f"{operation}: {cause} (exit {result.returncode}); raw diagnostics withheld")
 
+    return result.stdout
+
 
 def run(arguments, *, timeout=120):
     result = subprocess.run(arguments, text=True, capture_output=True,
@@ -66,11 +70,40 @@ def run(arguments, *, timeout=120):
             "User interaction is not allowed": "signing key requires interactive access",
             "errSecInternalComponent": "keychain denied access to the signing identity",
             "not signed at all": "candidate contains an unsigned component",
+            "resource fork, Finder information": "candidate contains metadata forbidden by code signing",
+            "unable to build chain": "signing certificate chain could not be built",
+            "unsealed contents present": "embedded bundle has unsealed root contents",
+            "bundle format unrecognized": "component has an unsupported bundle format",
+            "timestamp service": "Apple timestamp service failed",
+            "Timestamping service": "Apple timestamp service failed",
+            "certificate has expired": "signing certificate has expired",
+            "CSSMERR_TP_CERT_EXPIRED": "signing certificate has expired",
         }
         cause = next((cause for marker, cause in causes.items() if marker in result.stderr),
                      "native signing operation returned an error")
         raise RuntimeError(f"{Path(arguments[0]).name}: {cause} (exit {result.returncode}); raw diagnostics withheld")
     return result.stdout
+
+
+@contextmanager
+def keychain_search(keychain):
+    previous = [value for value in shlex.split(security("list-keychains", "-d", "user"))
+                if Path(value) != keychain]
+    if not previous or any(not Path(value).is_absolute() for value in previous):
+        raise RuntimeError("Existing user keychain search list is absent or malformed")
+    try:
+        security("list-keychains", "-d", "user", "-s", str(keychain), *previous)
+        yield
+    finally:
+        security("list-keychains", "-d", "user", "-s", *previous)
+
+
+def signable_files(app):
+    for path in sorted(app.rglob("*")):
+        if path.is_symlink() or not path.is_file() or any(part.endswith(".framework") for part in path.parts):
+            continue
+        if "Mach-O" in run(["/usr/bin/file", "-b", str(path)]):
+            yield path
 
 
 def private_file(path, content):
@@ -115,40 +148,40 @@ def main():
                 security("set-key-partition-list", "-S", "apple-tool:,apple:", "-s",
                          "-k", password, str(keychain))
 
-                def sign(path):
-                    run(["/usr/bin/codesign", "--force", "--options", "runtime", "--timestamp",
-                         "--keychain", str(keychain), "--sign",
-                         credentials["APPLE_SIGNING_IDENTITY"], str(path)])
+                with keychain_search(keychain):
+                    def sign(path):
+                        print("Signing component: " + (str(path.relative_to(app)) if path != app else "Wowlet.app"), flush=True)
+                        run(["/usr/bin/codesign", "--force", "--options", "runtime", "--timestamp",
+                             "--keychain", str(keychain), "--sign",
+                             credentials["APPLE_SIGNING_IDENTITY"], str(path)])
 
-                for path in sorted(app.rglob("*")):
-                    if path.is_file() and not any(part.endswith(".framework") for part in path.parts):
-                        if "Mach-O" in run(["/usr/bin/file", "-b", str(path)]):
-                            sign(path)
-                frameworks = app / "Contents/Frameworks"
-                for path in sorted(frameworks.glob("*.framework")):
-                    sign(path)
-                sign(app)
-                run(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)])
-                archive = workspace / "candidate.zip"
-                run(["/usr/bin/ditto", "-c", "-k", "--keepParent", str(app), str(archive)])
-                raw = run(["/usr/bin/xcrun", "notarytool", "submit", str(archive),
-                           "--key", str(notary_key), "--key-id", credentials["APPLE_API_KEY"],
-                           "--issuer", credentials["APPLE_API_ISSUER"], "--wait", "--timeout", "30m",
-                           "--output-format", "json"], timeout=1900)
-                response = json.loads(raw)
-                if response.get("status") != "Accepted":
-                    raise RuntimeError("Apple notarization did not return Accepted")
-                try:
-                    uuid.UUID(response.get("id", ""))
-                except (ValueError, TypeError, AttributeError):
-                    raise RuntimeError("Apple notarization submission identity is missing or malformed") from None
-                run(["/usr/bin/xcrun", "stapler", "staple", str(app)])
-                run(["/usr/bin/xcrun", "stapler", "validate", str(app)])
-                private_file(app.parent / "macos-signing.json", json.dumps({
-                    "developer_id_verified": True, "notarization_status": "Accepted",
-                    "notary_submission_id": response.get("id"), "staple_validated": True,
-                }, sort_keys=True).encode())
-                print("Developer ID signature verified; notarization accepted; staple validated")
+                    for path in signable_files(app):
+                        sign(path)
+                    frameworks = app / "Contents/Frameworks"
+                    for path in sorted(frameworks.glob("*.framework")):
+                        sign(path)
+                    sign(app)
+                    run(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)])
+                    archive = workspace / "candidate.zip"
+                    run(["/usr/bin/ditto", "-c", "-k", "--keepParent", str(app), str(archive)])
+                    raw = run(["/usr/bin/xcrun", "notarytool", "submit", str(archive),
+                               "--key", str(notary_key), "--key-id", credentials["APPLE_API_KEY"],
+                               "--issuer", credentials["APPLE_API_ISSUER"], "--wait", "--timeout", "30m",
+                               "--output-format", "json"], timeout=1900)
+                    response = json.loads(raw)
+                    if response.get("status") != "Accepted":
+                        raise RuntimeError("Apple notarization did not return Accepted")
+                    try:
+                        uuid.UUID(response.get("id", ""))
+                    except (ValueError, TypeError, AttributeError):
+                        raise RuntimeError("Apple notarization submission identity is missing or malformed") from None
+                    run(["/usr/bin/xcrun", "stapler", "staple", str(app)])
+                    run(["/usr/bin/xcrun", "stapler", "validate", str(app)])
+                    private_file(app.parent / "macos-signing.json", json.dumps({
+                        "developer_id_verified": True, "notarization_status": "Accepted",
+                        "notary_submission_id": response.get("id"), "staple_validated": True,
+                    }, sort_keys=True).encode())
+                    print("Developer ID signature verified; notarization accepted; staple validated")
             finally:
                 if created:
                     security("delete-keychain", str(keychain))
