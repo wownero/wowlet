@@ -1,7 +1,7 @@
 name: linux appimage (gitea self-hosted)
 
 # Runs ONLY on Gitea (GitHub ignores .gitea/workflows), in the private Builds
-# repository. Gitea is master; GitHub is a mirror and a release surface.
+# repository. GitHub wownero/wowlet owns source and release publication.
 #
 # Unlike the Windows lane, which builds a static toolchain of its own through
 # contrib/depends, the x86_64 AppImage links against the host's Qt6. Those

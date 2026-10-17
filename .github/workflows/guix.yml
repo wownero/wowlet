@@ -1,6 +1,7 @@
 name: ci/gh-actions/guix
 
-on: [push, pull_request]
+# Legacy builds are manual only. Release artifacts are built in Builds/wowlet.
+on: [workflow_dispatch]
 
 jobs:
   cache-sources:

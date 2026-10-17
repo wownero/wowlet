@@ -1,7 +1,7 @@
 name: windows build + sign (gitea self-hosted)
 
 # Runs ONLY on Gitea (GitHub ignores .gitea/workflows), in the private Builds
-# repository. Gitea is master; GitHub is a mirror and a release surface.
+# repository. GitHub wownero/wowlet owns source and release publication.
 #
 # Two jobs on two different machines, and that split is the whole point:
 #
