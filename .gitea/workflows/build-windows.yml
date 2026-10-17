@@ -141,6 +141,9 @@ jobs:
           (cp LICENSE stage/LICENSE.txt 2>/dev/null || cp COPYING stage/LICENSE.txt 2>/dev/null) || true
           ls -la stage stage/tor
 
+      - name: Record unsigned build source and hash
+        run: python3 -B contrib/release/write_receipt.py --platform windows-build --file stage/wowlet.exe --output stage/wowlet-build.json
+
       - name: upload unsigned staging tree
         # v3, not v4: Gitea Actions implements the older artifact protocol and
         # rejects @actions/artifact v2 clients with
@@ -156,11 +159,38 @@ jobs:
     needs: build
     runs-on: windows             # gitea label windows:host -> desktop-iim2fs2
     steps:
+      - name: Prepare the exact signing run workspace
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:EXPECTED_SHA -notmatch '^[0-9a-f]{40}$' -or $env:GITHUB_SHA -ne $env:EXPECTED_SHA) {
+            throw "Signing run differs from the reviewed source"
+          }
+          foreach ($path in @('stage', 'unsigned', 'wowlet-build.json', 'wowlet-windows-receipt.json', 'wowlet-x86_64-windows.zip', 'wowlet-x86_64-windows-unsigned.zip')) {
+            if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Recurse -Force }
+          }
+
       - name: download unsigned staging tree
         uses: actions/download-artifact@v3
         with:
           name: wowlet-x86_64-windows-unsigned
           path: stage
+
+      - name: Verify exact signing source and unsigned input
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:EXPECTED_SHA -notmatch '^[0-9a-f]{40}$' -or $env:GITHUB_SHA -ne $env:EXPECTED_SHA) {
+            throw "Signing run differs from the reviewed source"
+          }
+          $build = Get-Content 'stage/wowlet-build.json' -Raw | ConvertFrom-Json
+          if ($build.dispatch_commit -ne $env:EXPECTED_SHA -or $build.platform -ne 'windows-build' -or $build.artifacts.Count -ne 1) {
+            throw "Unsigned build receipt differs from the reviewed signing run"
+          }
+          if ($build.artifacts[0].name -ne 'wowlet.exe' -or $build.artifacts[0].sha256 -ne (Get-FileHash 'stage/wowlet.exe' -Algorithm SHA256).Hash.ToLowerInvariant()) {
+            throw "Unsigned executable differs from its build receipt"
+          }
+          Move-Item 'stage/wowlet-build.json' 'wowlet-build.json'
 
       - name: keep the unsigned tree for the reproducible archive
         shell: powershell
@@ -265,6 +295,29 @@ jobs:
               (Get-FileHash $archive -Algorithm SHA256).Hash
           }
 
+      - name: Record signed candidate source, hashes and certificate
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $build = Get-Content 'wowlet-build.json' -Raw | ConvertFrom-Json
+          $sig = Get-AuthenticodeSignature 'stage/wowlet.exe'
+          if ($sig.Status -ne 'Valid' -or -not $sig.TimeStamperCertificate -or $sig.SignerCertificate.Subject -notmatch 'Such Software LLC') {
+            throw "Final executable signature is not valid, timestamped and from the expected publisher"
+          }
+          $files = @('wowlet-x86_64-windows.zip', 'wowlet-x86_64-windows-unsigned.zip') | ForEach-Object {
+            @{name=$_;size=(Get-Item $_).Length;sha256=(Get-FileHash $_ -Algorithm SHA256).Hash.ToLowerInvariant()}
+          }
+          $receipt = @{
+            schema_version=1;app='wowlet';version=$build.version;platform='windows';
+            dispatch_commit=$env:GITHUB_SHA;wallet_library_commit=$build.wallet_library_commit;
+            environment_run_id=$env:GITHUB_RUN_ID;environment_run_attempt=$env:GITHUB_RUN_ATTEMPT;
+            artifacts=@($files);unsigned_executable=$build.artifacts[0];
+            signed_executable_sha256=(Get-FileHash 'stage/wowlet.exe' -Algorithm SHA256).Hash.ToLowerInvariant();
+            signing=@{status=$sig.Status.ToString();timestamped=$true;subject=$sig.SignerCertificate.Subject;
+              certificate_thumbprint=$sig.SignerCertificate.Thumbprint;certificate_not_after=$sig.SignerCertificate.NotAfter.ToUniversalTime().ToString('o')}
+          }
+          $receipt | ConvertTo-Json -Depth 6 | Set-Content -Encoding UTF8 'wowlet-windows-receipt.json'
+
       - name: upload Windows zips
         uses: actions/upload-artifact@v3
         with:
@@ -272,4 +325,5 @@ jobs:
           path: |
             wowlet-x86_64-windows.zip
             wowlet-x86_64-windows-unsigned.zip
+            wowlet-windows-receipt.json
           if-no-files-found: error
