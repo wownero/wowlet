@@ -209,11 +209,16 @@ jobs:
           ditto -c -k --keepParent Wowlet.app ../wowlet-macos-$(uname -m).zip
           ls -la ../wowlet-macos-*.zip
 
+      - name: Record signed candidate source and hashes
+        run: python3 -B contrib/release/write_receipt.py --platform macos --file build/wowlet-macos-$(uname -m).zip --output build/wowlet-macos-receipt.json
+
       - name: upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: wowlet-macos
-          path: build/wowlet-macos-*.zip
+          path: |
+            build/wowlet-macos-*.zip
+            build/wowlet-macos-receipt.json
           retention-days: 14
           # Without this an empty upload passes silently, which is how a signed
           # build can appear to publish while shipping nothing.

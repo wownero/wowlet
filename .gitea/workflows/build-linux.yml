@@ -149,11 +149,16 @@ jobs:
           ARCH=x86_64 ./appimagetool AppDir wowlet-x86_64.AppImage
           ls -la wowlet-x86_64.AppImage
 
+      - name: Record candidate source and hashes
+        run: python3 -B contrib/release/write_receipt.py --platform linux --file wowlet-x86_64.AppImage --output wowlet-linux-receipt.json
+
       - name: upload wowlet AppImage
         # v3: Gitea implements the older artifact protocol and rejects
         # @actions/artifact v2 clients (upload-artifact@v4+) as unsupported.
         uses: actions/upload-artifact@v3
         with:
           name: wowlet-x86_64-linux-AppImage
-          path: wowlet-x86_64.AppImage
+          path: |
+            wowlet-x86_64.AppImage
+            wowlet-linux-receipt.json
           if-no-files-found: error

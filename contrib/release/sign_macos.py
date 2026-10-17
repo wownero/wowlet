@@ -12,6 +12,7 @@ import secrets
 import subprocess
 import sys
 import tempfile
+import uuid
 
 
 FIELDS = (
@@ -137,8 +138,16 @@ def main():
                 response = json.loads(raw)
                 if response.get("status") != "Accepted":
                     raise RuntimeError("Apple notarization did not return Accepted")
+                try:
+                    uuid.UUID(response.get("id", ""))
+                except (ValueError, TypeError, AttributeError):
+                    raise RuntimeError("Apple notarization submission identity is missing or malformed") from None
                 run(["/usr/bin/xcrun", "stapler", "staple", str(app)])
                 run(["/usr/bin/xcrun", "stapler", "validate", str(app)])
+                private_file(app.parent / "macos-signing.json", json.dumps({
+                    "developer_id_verified": True, "notarization_status": "Accepted",
+                    "notary_submission_id": response.get("id"), "staple_validated": True,
+                }, sort_keys=True).encode())
                 print("Developer ID signature verified; notarization accepted; staple validated")
             finally:
                 if created:
