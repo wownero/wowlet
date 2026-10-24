@@ -22,7 +22,7 @@ jobs:
                             qt6-wayland-dev qt6-declarative-dev libzip-dev libsodium-dev libgcrypt20-dev libx11-xcb-dev
                             qml6-module-qtquick qml6-module-qtquick-layouts qml6-module-qtquick-window qml6-module-qtqml-workerscript qml6-module-qtqml-models
                             protobuf-compiler libprotobuf-dev libhidapi-dev libzxing-dev libusb-dev
-                            libusb-1.0-0-dev patchelf
+                            libusb-1.0-0-dev libcom-err2 patchelf
       - name: configure git
         run: git config --global --add safe.directory '*'
       - uses: actions/checkout@v4
@@ -77,10 +77,20 @@ jobs:
           export EXTRA_QT_PLUGINS="svg;multimedia;tls"
           export QML_SOURCES_PATHS="$PWD/src/assets/qml"
           export PATH="$PWD:$PATH"
+          # linuxdeploy's AppImage excludelist assumes libcom_err.so.2 is present on the host.
+          # Minimal Debian and openSUSE systems may omit it, but it is a transitive runtime dependency.
+          LIBCOM_ERR="$(ldconfig -p | awk '$1 == "libcom_err.so.2" { print $NF; exit }')"
+          if [[ -z "$LIBCOM_ERR" || ! -f "$LIBCOM_ERR" ]]; then
+            echo "ERROR: libcom_err.so.2 is unavailable in the build image; cannot make a portable AppImage." >&2
+            exit 1
+          fi
           # Populate AppDir (libs + Qt plugins + QML modules) — no --output yet, so we can patch QML first.
           ./linuxdeploy --appdir AppDir --plugin qt \
+            --library "$LIBCOM_ERR" \
             -d AppDir/usr/share/applications/wowlet.desktop \
             -i AppDir/usr/share/icons/hicolor/256x256/apps/wowlet.png
+          # Guard this packaging regression: the AppImage must carry the excluded system library.
+          bash contrib/AppImage/check-libcom-err.sh AppDir
           # ---------------------------------------------------------------------------------------
           # Make the QML bundle COMPLETE and deterministic (no whack-a-mole).
           #
